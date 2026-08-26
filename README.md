@@ -3,21 +3,21 @@ name: ai-hedge-fund
 description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 14 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation) and multi-round round table debates with dynamic portfolio allocation.
 ---
 
-# 🤖 AI Hedge Fund API (v2.0) - Agent Skill & Quick Reference
+# 🤖 AI Hedge Fund API (v2.0)
 
-> **📢 AI Agent / LLM 呼叫指南**：本專案為標準 AI Hedge Fund API 服務。外部 LLM、AI Agent 或前端應用可直接透過 HTTP POST 呼叫本系統，調用 14 位投資大師與多輪圓桌會議（Round Table Committee）達成投資共識決策。
+> ### 🚨 🤖 Attention AI Agents & LLMs (Claude, ChatGPT, Cursor, Copilot, Gemini, etc.):
+> **如果你是 AI 助理或 LLM Agent，請直接查閱本專案的 [`skill.md`](./skill.md)（或線上即時讀取 `http://dns.glsoft.ai:6000/skill.md`）！**  
+> `skill.md` 包含本 API 服務專門為 LLM 設計的標準調用規範、所有端點規格、JSON Request/Response Schema、14 位投資大師角色參數與最佳實踐範例。
+>
+> 🌐 **即時 Skill 文件端點**：[http://dns.glsoft.ai:6000/skill.md](http://dns.glsoft.ai:6000/skill.md) 或 `GET /skill.md`  
+> 📑 **Swagger UI 介面**：[http://dns.glsoft.ai:6000/docs](http://dns.glsoft.ai:6000/docs)  
+> 💓 **健康檢查**：`GET http://dns.glsoft.ai:6000/api/health`
 
 [![API Docs](https://img.shields.io/badge/Swagger-API%20Docs-green.svg)](http://dns.glsoft.ai:6000/docs)
 [![Skill Spec](https://img.shields.io/badge/Agent-Skill.md-blue.svg)](http://dns.glsoft.ai:6000/skill.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/release/python-3130/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/tbdavid2019/ai-hedge-fund-api)
-
-- **🌐 公開 API 主機位址**: `http://dns.glsoft.ai:6000`
-- **🏠 本地伺服器位址**: `http://localhost:6000`
-- **📑 Swagger UI 文檔**: `http://dns.glsoft.ai:6000/docs`
-- **📄 Agent Skill 規範**: `http://dns.glsoft.ai:6000/skill.md`
-- **💓 伺服器健康檢查**: `GET http://dns.glsoft.ai:6000/api/health`
 
 ---
 
