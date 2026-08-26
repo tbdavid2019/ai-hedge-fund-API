@@ -252,8 +252,10 @@ def run_analysis():
             ticker_list = [t.strip() for t in str(raw_tickers).split(',') if t.strip()]
             
         selected_analysts = data.get('selectedAnalysts', [])
-        model_name = data.get('modelName') or "gpt-4o"
-        model_provider = infer_model_provider(model_name, data.get('modelProvider'))
+        default_model = os.getenv("DEFAULT_MODEL", "gpt-4o")
+        default_provider = os.getenv("DEFAULT_MODEL_PROVIDER", "")
+        model_name = data.get('modelName') or default_model
+        model_provider = infer_model_provider(model_name, data.get('modelProvider') or default_provider)
         
         enable_round_table = bool(data.get('enableRoundTable', False) or data.get('enable_round_table', False))
         round_table_rounds = int(data.get('roundTableRounds', 2) or data.get('round_table_rounds', 2))
@@ -313,8 +315,10 @@ def run_round_table_endpoint():
             ticker_list = [t.strip() for t in str(raw_tickers).split(',') if t.strip()]
             
         analyst_signals = data.get('analystSignals') or data.get('analyst_signals') or {}
-        model_name = data.get('modelName') or "gpt-4o"
-        model_provider = infer_model_provider(model_name, data.get('modelProvider'))
+        default_model = os.getenv("DEFAULT_MODEL", "gpt-4o")
+        default_provider = os.getenv("DEFAULT_MODEL_PROVIDER", "")
+        model_name = data.get('modelName') or default_model
+        model_provider = infer_model_provider(model_name, data.get('modelProvider') or default_provider)
         num_rounds = int(data.get('numRounds', 2) or data.get('roundTableRounds', 2))
 
         broadcast_log(f"Starting standalone round table debate for {ticker_list}", "info")
