@@ -4,6 +4,15 @@
 
 ---
 
+## 🚀 [v2.0.2] - 2026-08-26
+
+### 🌐 1. 全面支援英文與繁體中文雙語輸出 (Bilingual Reasoning & Debates)
+- **AI 分析師雙語推論**：升級 [src/utils/llm.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/utils/llm.py) 的 `call_llm`，自動為 14 位投資大師（巴菲特、蒙格、伍德、貝瑞、林區、費雪、WSB、葛拉漢、艾克曼、裴洛西、估值、基本面等）與投資組合經理注入雙語規範，回傳清晰的英文與繁體中文（【繁體中文解析】...）詳細推論。
+- **圓桌會議委員會雙語辯論**：升級 [src/round_table/engine.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/round_table/engine.py)，使辯論逐字稿 (`conversation_transcript`)、摘要 (`discussion_summary`)、共識觀點 (`consensus_view`) 與異議觀點 (`dissenting_opinions`) 全面包含英文與繁體中文對照。
+- **情緒分析師雙語升級**：在 [src/agents/sentiment.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/sentiment.py) 增加新聞情緒統計與內部人交易數據之繁體中文解讀。
+
+---
+
 ## 🚀 [v2.0.1] - 2026-08-26
 
 ### 🛡️ 1. 修復技術指標 NaN 導致 Node.js JSON.parse 解析失敗問題 (RFC 8259 嚴格相容)

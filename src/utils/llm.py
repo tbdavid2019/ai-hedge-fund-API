@@ -8,6 +8,36 @@ from utils.progress import progress
 T = TypeVar('T', bound=BaseModel)
 
 
+def inject_bilingual_instruction(prompt: Any) -> Any:
+    """
+    Appends bilingual language instruction to prompts:
+    Ensures all reasoning, explanations, and descriptive text fields in the output JSON
+    are presented in bilingual format (English followed by Traditional Chinese / 繁體中文).
+    """
+    bilingual_rule = (
+        "\n\n[CRITICAL LANGUAGE REQUIREMENT / 雙語輸出要求]:\n"
+        "All analytical explanations, 'reasoning', and descriptive text in your JSON response "
+        "MUST be bilingual: provide both clear English and accurate Traditional Chinese (繁體中文).\n"
+        "Format example:\n"
+        "'The stock is overvalued due to rising debt and low ROE. \\n【繁體中文解析】由於負債上升且股東權益報酬率偏低，該股目前估值過高。'"
+    )
+    try:
+        from langchain_core.messages import HumanMessage, SystemMessage
+        if hasattr(prompt, "to_messages"):
+            msgs = list(prompt.to_messages())
+            msgs.append(HumanMessage(content=bilingual_rule))
+            return msgs
+        elif isinstance(prompt, list):
+            msgs = list(prompt)
+            msgs.append(HumanMessage(content=bilingual_rule))
+            return msgs
+        elif isinstance(prompt, str):
+            return prompt + bilingual_rule
+    except Exception:
+        pass
+    return prompt
+
+
 def call_llm(
     prompt: Any,
     model_name: Optional[str] = None,
@@ -18,22 +48,13 @@ def call_llm(
     default_factory = None
 ) -> T:
     """
-    Makes an LLM call with retry logic and automatic fallback to ChatGPT (gpt-4o).
-    
-    Args:
-        prompt: The prompt to send to the LLM
-        model_name: Name of the model to use (defaults to deepseek-v4-flash)
-        model_provider: Provider of the model
-        pydantic_model: The Pydantic model class to structure the output
-        agent_name: Optional name of the agent for progress updates
-        max_retries: Maximum number of retries per provider
-        default_factory: Optional factory function to create default response on failure
-        
-    Returns:
-        An instance of the specified Pydantic model
+    Makes an LLM call with retry logic, bilingual instruction injection, and automatic fallback to ChatGPT (gpt-4o).
     """
     from llm.models import get_model, get_model_info, get_fallback_model
     
+    # Inject bilingual English & Traditional Chinese instruction
+    prompt = inject_bilingual_instruction(prompt)
+
     # 1. Attempt Primary LLM Model (deepseek-v4-flash via nen.com.tw)
     model_name = model_name or "deepseek-v4-flash"
     model_provider = model_provider or "OpenAI-Compatible"

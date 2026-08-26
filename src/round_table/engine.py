@@ -170,16 +170,16 @@ Debate Structure ({num_rounds} Rounds):
    - The Chairman summarizes key areas of consensus and dissent.
    - Deliver the final committee recommendation.
 
-Output Requirements:
+Output Requirements (Bilingual English & Traditional Chinese / 雙語輸出要求):
 Return a strictly valid JSON object matching this schema:
 {{
   "signal": "bullish" | "bearish" | "neutral",
   "confidence": <number between 0 and 100>,
-  "reasoning": "<concise 2-3 sentence summary of final decision rationale>",
-  "discussion_summary": "<summary of the debate highlights and key turning points>",
-  "consensus_view": "<what the committee generally agreed on>",
-  "dissenting_opinions": "<notable contrarian warnings or disagreements>",
-  "conversation_transcript": "<full verbatim transcript of the debate with [Speaker Name]: ... lines>"
+  "reasoning": "<Bilingual summary of final decision rationale: English followed by 繁體中文詳細說明>",
+  "discussion_summary": "<Bilingual summary of the debate highlights: English followed by 繁體中文摘要>",
+  "consensus_view": "<Bilingual consensus view: English followed by 繁體中文共識觀點>",
+  "dissenting_opinions": "<Bilingual dissenting opinions: English followed by 繁體中文異議觀點>",
+  "conversation_transcript": "<full verbatim transcript of the debate where each [Speaker Name]: line contains both authentic English thesis and Traditional Chinese translation>"
 }}
 """
 

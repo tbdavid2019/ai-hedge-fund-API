@@ -87,7 +87,10 @@ def sentiment_agent(state: AgentState):
         
         insider_summary = f"{insider_signals.count('bullish')} buy / {insider_signals.count('bearish')} sell" if has_insiders else "No insider data"
         news_summary = f"{news_signals.count('bullish')} bullish / {news_signals.count('bearish')} bearish / {news_signals.count('neutral')} neutral" if has_news else "No news data"
-        reasoning = f"News Sentiment ({len(news_signals)} items): {news_summary}; Insider Trades: {insider_summary}."
+        reasoning = (
+            f"News Sentiment ({len(news_signals)} items): {news_summary}; Insider Trades: {insider_summary}.\n"
+            f"【繁體中文解析】即時新聞情緒 ({len(news_signals)} 則)：{news_summary}；內部人交易：{insider_summary}，綜合評估為 {overall_signal} (信心度 {confidence}%)。"
+        )
 
         sentiment_analysis[ticker] = {
             "signal": overall_signal,
