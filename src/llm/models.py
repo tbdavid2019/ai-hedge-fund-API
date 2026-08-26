@@ -4,7 +4,7 @@ from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from enum import Enum
 from pydantic import BaseModel
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Any
 
 
 class ModelProvider(str, Enum):
