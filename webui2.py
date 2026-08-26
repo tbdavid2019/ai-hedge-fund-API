@@ -6,7 +6,7 @@ import json
 import threading
 import traceback
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from flask_sock import Sock
 from datetime import datetime
@@ -175,6 +175,21 @@ def broadcast_log(message, level="info"):
             client.send(json.dumps(log_data))
         except Exception:
             websocket_clients.remove(client)
+
+
+@app.route('/')
+@app.route('/skill.md')
+def serve_skill_md():
+    """提供 Skill MD 文件供 AI Agent / LLM 參考與調用指南"""
+    skill_path = os.path.join(os.path.dirname(__file__), "static", "skill.md")
+    if not os.path.exists(skill_path):
+        skill_path = os.path.join(os.path.dirname(__file__), "skill.md")
+    
+    if os.path.exists(skill_path):
+        with open(skill_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return Response(content, mimetype="text/markdown; charset=utf-8")
+    return Response("# AI Hedge Fund API\n\nPlease visit /docs for Swagger UI documentation.", mimetype="text/plain; charset=utf-8")
 
 
 @app.route('/api/health', methods=['GET'])
