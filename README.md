@@ -27,8 +27,9 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 
 | 文件 | 說明 | 適用對象 |
 |:---|:---|:---|
-| 📄 [**skill.md**](./skill.md) | **API 調用規範與端點 Schema**（最簡 POST 範例、JSON 格式、14 位分析師 key） | 🤖 AI Agents & LLMs |
-| 🤖 [**AGENTS.md**](./AGENTS.md) | **14 位傳奇投資大師分析模型**（巴菲特、伍德、貝瑞等投資哲學、量化指標、圓桌會議攻防機制） | 📊 投資研究者 / 開發者 |
+| 📄 [**skill.md**](./skill.md) | **API 調用規範與端點 Schema**（最簡 POST 範例、JSON 格式、14 位分析師 key） | 🤖 AI Agents & LLMs（API 呼叫端） |
+| 🛠️ [**AGENTS.md**](./AGENTS.md) | **代碼庫架構與 AI 開發者指南**（LangGraph 狀態機、模組職責、LLM Fallback 機制、新增 Agent 步驟） | 🤖 AI Coding Agents（代碼編程/維護） |
+| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **14 位傳奇投資分析師量化模型**（巴菲特、伍德、貝瑞等投資哲學、指標計算、圓桌會議機制） | 📈 投資研究者 / 開發者 |
 | 📝 [**CHANGELOG.md**](./CHANGELOG.md) | **版本更新歷程與異動明細**（v2.0.0 重大更新、2md 即時搜尋整合） | 🛠️ 維護者 / 開發者 |
 | 📑 [**Swagger UI**](http://dns.glsoft.ai:6000/docs) | **互動式 API 文件測試平台** | 🌐 瀏覽器線上測試 |
 
