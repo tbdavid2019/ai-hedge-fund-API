@@ -1,26 +1,38 @@
-# AI Hedge Fund API
+# AI Hedge Fund API (v2.0)
+
+[![API Docs](https://img.shields.io/badge/Swagger-API%20Docs-green.svg)](http://localhost:6000/docs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/release/python-3130/)
+[![Docker Image](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/tbdavid2019/ai-hedge-fund-api)
 
 ## 🚀 項目介紹
-本專案基於 `virattt/ai-hedge-fund` 和 `KRSHH/ritadel`，並進一步擴展，
-**提供 Web API 介面**，可讓其他應用直接調用 AI 分析師的投資建議。
+本專案基於 `virattt/ai-hedge-fund` 和 `KRSHH/ritadel` 進行深度重構與擴展，**提供完整的 Web API 服務**，能模擬頂級對沖基金的運作架構，調用 14 位傳奇投資大師進行深度分析，並透過**多輪圓桌會議辯論**達成最終投資決策。
 
-**主要改動：**
-- ✅ **使用 Python 3.13，棄用 Poetry，改用 Pip 管理依賴**
-- ✅ **內建 Flask API 服務（預設運行於 `6000` 端口）**
-- ✅ **支援多種 LLM（GPT-4o、Claude 3、LLaMA3、Gemini）**
-- ✅ **支援金融數據 API（Alpha Vantage、StockData、Finnhub 等）**
-- ✅ **支援 Docker 部署，可直接 `docker run` 啟動 API 服務**
-- ✅ **14 個專業投資分析師 AI Agent，涵蓋價值投資、成長投資、技術分析等多種策略**
+**🔥 核心特色：**
+- 🏛️ **多輪投資圓桌會議 (Multi-Round Round Table)**：模擬巴菲特、伍德、貝瑞、WSB 散戶等 14 位大師的多輪交鋒辯論，達成委員會共識。
+- 🌐 **整合 2md 系列即時搜尋**：透過 `2md.aiurl.tw` / `2md.glsoft.ai` / `create360.ai` 即時獲取即時新聞與社群風向，解決非美股與新聞過時問題。
+- 🤖 **最新 LLM 與自訂 API 支援**：支援 Claude 3.7 Sonnet、GPT-4.5 Preview、o1/o3-mini、Gemini 2.0 Flash、DeepSeek-V3/R1，以及自訂 `OPENAI_BASE_URL`（相容 OneAPI / NewAPI / Ollama）。
+- 📈 **社群風向與散戶情緒**：WSB Agent 整合即時社群動能與選擇權軋空潛力評估。
+- 📦 **Docker 一鍵部署**：內建 Flask API 與 Swagger UI（預設運行於 `6000` 連接埠），支援 WebSocket 即時日誌廣播與 Discord Webhook 報告推送。
+
+---
+
+📖 **相關重要文檔：**
+- 🤖 [**AGENTS.md**](./AGENTS.md)：14 位分析師投資哲學、量化模型與圓桌會議機制完整介紹
+- 📝 [**CHANGELOG.md**](./CHANGELOG.md)：版本更新歷程與詳細改動記錄
+
+---
 
 網頁版 Web Page
 <img width="1516" alt="image" src="https://github.com/user-attachments/assets/e2d443f9-0a48-44ee-a9f4-a61bdfe60e96" />
 
-telegram bot 
+Telegram Bot 整合
 https://github.com/tbdavid2019/telegram-bot-stock2
 ![image](https://github.com/user-attachments/assets/26d173d0-cc64-4d11-b70b-7735a07c30e0)
 
+---
 
-## 📌 環境安裝
+## 📌 環境安裝與部署
 
 ### **1️⃣ Clone 本專案**
 ```bash
@@ -36,8 +48,8 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### **3️⃣ 設定環境變數**
-請在專案根目錄創建 `.env` 檔案，並填入 API Keys：
+### **3️⃣ 設定環境變數 (`.env`)**
+請在專案根目錄創建 `.env` 檔案：
 
 ```ini
 # LLM API Keys（至少設定一個）
@@ -45,145 +57,129 @@ OPENAI_API_KEY=your-openai-api-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 GROQ_API_KEY=your-groq-api-key
 GEMINI_API_KEY=your-gemini-api-key
+DEEPSEEK_API_KEY=your-deepseek-api-key
 
-# 金融數據 API Keys（至少設定一個）
+# 自訂 OpenAI 相容網關（可選，如 OneAPI、NewAPI、Ollama）
+# OPENAI_BASE_URL=https://your-api-gateway.com/v1
+
+# 金融數據 API Keys（可選）
 ALPHA_VANTAGE_API_KEY=your-alpha-vantage-key
 STOCKDATA_API_KEY=your-stockdata-key
 FINNHUB_API_KEY=your-finnhub-key
 EODHD_API_KEY=your-eodhd-key
 
 # Discord Webhook（可選，用於推送分析結果通知）
-# 預設關閉，設為 true 啟用
 DISCORD_WEBHOOK_ENABLED=false
-DISCORD_WEBHOOK_URL=your-discord-webhook-url
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your-webhook-url
 ```
-
-## 📢 Discord 通知功能
-
-本專案支援將分析結果自動推送到 Discord 頻道（**預設關閉**）：
-
-### **啟用方式**
-1. 在 Discord 頻道設定中建立 Webhook（Server Settings → Integrations → Webhooks）
-2. 在 `.env` 檔案中設定：
-   ```ini
-   DISCORD_WEBHOOK_ENABLED=true
-   DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your-webhook-url
-   ```
-3. 重新啟動服務，每次分析完成後結果會自動推送到指定的 Discord 頻道
-
-### **通知內容包含**
-- 📅 分析日期
-- 📈 分析標的
-- 🎯 投資決策（買入/賣出/持有）
-- 💯 信心度
-- 📊 各分析師信號摘要
-
-## 🚀 啟動 API 服務
-
-```bash
-python webui2.py --api
-```
-預設 API 會運行於 `http://localhost:6000`
-
-### **📚 API 文檔**
-啟動服務後，可訪問 Swagger UI 查看完整 API 文檔：
-- **Swagger UI**: [http://localhost:6000/docs](http://localhost:6000/docs)
-- **健康檢查**: [http://localhost:6000/api/health](http://localhost:6000/api/health)
-
-### **🔗 Docker Hub 映像**
-預建的 Docker 映像可直接從 Docker Hub 拉取：
-```bash
-docker pull tbdavid2019/ai-hedge-fund-api:latest
-docker run --env-file .env -p 6000:6000 tbdavid2019/ai-hedge-fund-api:latest
-```
-
-## 🤖 **可用的 AI 投資分析師**
-
-本專案內建 **14 個專業 AI 投資分析師**，每個分析師都基於真實投資大師的策略和哲學：
-
-### **� 價值投資大師**
-
-| 順序 | Key | 顯示名稱 | Agent 檔案 | 投資策略 |
-|:---:|:---|:---|:---|:---|
-| 0 | `ben_graham` | Ben Graham | `ben_graham.py` | 價值投資之父，重視安全邊際、低本益比、穩健財務 |
-| 1 | `bill_ackman` | Bill Ackman | `bill_ackman.py` | 激進價值投資，專注優質企業、集中持股 |
-| 3 | `charlie_munger` | Charlie Munger | `charlie_munger.py` | 品質投資，尋找護城河、高 ROE、優秀管理層 |
-| 5 | `michael_burry` | Michael Burry | `michael_burry.py` | 深度價值投資，尋找被低估的資產淨值 |
-| 6 | `peter_lynch` | Peter Lynch | `peter_lynch.py` | 成長價值投資，重視 PEG Ratio、熟悉的企業 |
-| 7 | `phil_fisher` | Phil Fisher | `phil_fisher.py` | 成長潛力分析，重視研發、管理品質、產業前景 |
-| 8 | `warren_buffett` | Warren Buffett | `warren_buffett.py` | 長期價值投資，尋找優質企業、合理價格 |
-
-### **🚀 成長與創新策略**
-
-| 順序 | Key | 顯示名稱 | Agent 檔案 | 投資策略 |
-|:---:|:---|:---|:---|:---|
-| 2 | `cathie_wood` | Cathie Wood | `cathie_wood.py` | 顛覆式創新投資，聚焦 AI、電動車、基因科技 |
-
-### **📈 技術與情緒分析**
-
-| 順序 | Key | 顯示名稱 | Agent 檔案 | 分析方式 |
-|:---:|:---|:---|:---|:---|
-| 4 | `nancy_pelosi` | Nancy Pelosi | `nancy_pelosi.py` | 追蹤國會議員股票交易記錄 |
-| 9 | `wsb` | WallStreetBets | `wsb_agent.py` | Reddit 社群情緒、散戶動能分析 |
-| 10 | `technical_analyst` | Technical Analyst | `technicals.py` | 技術分析：MA、RSI、MACD 等指標 |
-| 11 | `sentiment_analyst` | Sentiment Analyst | `sentiment.py` | 新聞情緒分析、市場氛圍評估 |
-
-### **📐 基本面與估值分析**
-
-| 順序 | Key | 顯示名稱 | Agent 檔案 | 分析方式 |
-|:---:|:---|:---|:---|:---|
-| 12 | `fundamentals_analyst` | Fundamentals Analyst | `fundamentals.py` | 深度財務報表分析 |
-| 13 | `valuation_analyst` | Valuation Analyst | `valuation.py` | 企業估值模型、DCF 分析 |
-
-### **🛠 特殊角色（自動執行）**
-
-這些 Agent 在工作流中自動執行，不需要在 API 請求中指定：
-
-- `portfolio_manager.py` - 投資組合管理
-- `risk_manager.py` - 風險管理與部位控制
-- `round_table.py` - 綜合討論與決策整合
 
 ---
 
-## � **Docker 部署**
+## 🚀 啟動 API 服務
 
-### **1️⃣ 建立 Docker 映像**
+### **本機直接啟動**
 ```bash
+python webui2.py
+```
+預設 API 運行於 `http://localhost:6000`
+
+### **Docker 一鍵部署**
+```bash
+# 自行構建映像檔
 docker build -t ai-hedge-fund-api .
+docker run -d --name ai-hedge-fund-api --env-file .env --restart always -p 6000:6000 ai-hedge-fund-api
+
+# 或直接拉取 Docker Hub 預建映像
+docker pull tbdavid2019/ai-hedge-fund-api:latest
+docker run -d --name ai-hedge-fund-api --env-file .env --restart always -p 6000:6000 tbdavid2019/ai-hedge-fund-api:latest
 ```
 
-### **2️⃣ 啟動容器**
-```bash
-docker run --env-file .env -p 6000:6000 ai-hedge-fund-api
-```
+---
 
-## 🔍 **API 調用方式**
+## 📚 API 文檔與端點說明
 
-### **1️⃣ 股票分析 API**
+啟動服務後，可訪問 Swagger UI 進行互動式測試：
+- **Swagger UI 介面**: [http://localhost:6000/docs](http://localhost:6000/docs)
+- **健康檢查**: [http://localhost:6000/api/health](http://localhost:6000/api/health)
+- **即時日誌 WebSocket**: `ws://localhost:6000/ws/logs`
 
-#### **📥 請求方式**
+---
+
+## 🔍 API 調用範例
+
+### **1️⃣ 股票分析與多輪圓桌會議 (`POST /api/analysis`)**
+
 ```bash
 curl -X POST "http://localhost:6000/api/analysis" \
      -H "Content-Type: application/json" \
      -d '{
-           "tickers": "tsla",
-           "selectedAnalysts": ["ben_graham"],
-           "modelName": "gpt-4o"
+           "tickers": "TSLA,NVDA",
+           "selectedAnalysts": ["warren_buffett", "cathie_wood", "michael_burry", "wsb", "technical_analyst"],
+           "modelName": "gpt-4o",
+           "enableRoundTable": true,
+           "roundTableRounds": 2,
+           "initialCash": 100000
          }'
 ```
 
-#### **📋 請求參數說明**
+#### **請求參數說明**
 
 | 參數 | 類型 | 必填 | 說明 | 範例 |
 |:---|:---|:---:|:---|:---|
-| `tickers` | string | ✅ | 股票代碼（逗號分隔） | `"AAPL,TSLA,NVDA"` |
-| `selectedAnalysts` | array | ⚠️ | 要使用的分析師列表（空陣列=使用全部） | `["ben_graham", "warren_buffett"]` |
-| `modelName` | string | ✅ | LLM 模型名稱 | `"gpt-4o"`, `"claude-3-5-sonnet-20241022"` |
-| `startDate` | string | ❌ | 分析起始日期（預設：結束日期前 3 個月） | `"2024-01-01"` |
-| `endDate` | string | ❌ | 分析結束日期（預設：今天） | `"2024-12-31"` |
-| `initialCash` | number | ❌ | 初始現金（預設：100000） | `100000` |
+| `tickers` | string | ✅ | 股票代碼（逗號分隔，支援美股、台股 `2330.TW`、港股 `0001.HK`） | `"TSLA,NVDA"` |
+| `selectedAnalysts` | array | ❌ | 指定分析師列表（空陣列表示全部 14 位分析師） | `["warren_buffett", "cathie_wood"]` |
+| `modelName` | string | ❌ | LLM 模型名稱（預設 `"gpt-4o"`） | `"claude-3-7-sonnet-latest"`, `"gpt-4o"` |
+| `modelProvider` | string | ❌ | 模型供應商（自動推斷，可選 OpenAI, Anthropic, Gemini 等） | `"Anthropic"` |
+| `enableRoundTable` | boolean | ❌ | 是否啟用多輪圓桌會議辯論（預設 `false`） | `true` |
+| `roundTableRounds` | integer | ❌ | 圓桌會議辯論輪數（預設 `2`，可設 1~3） | `2` |
+| `initialCash` | number | ❌ | 初始資金（預設 `100000`） | `100000` |
+| `startDate` | string | ❌ | 分析起始日期（YYYY-MM-DD） | `"2024-01-01"` |
+| `endDate` | string | ❌ | 分析結束日期（YYYY-MM-DD） | `"2024-12-31"` |
 
-### **💰 風險管理 - 動態倉位分配**
+---
+
+### **2️⃣ 獨立執行多輪圓桌會議 (`POST /api/round_table`)**
+
+```bash
+curl -X POST "http://localhost:6000/api/round_table" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "tickers": "NVDA",
+           "analystSignals": {
+             "cathie_wood": {"NVDA": {"signal": "bullish", "confidence": 90, "reasoning": "AI 算力基礎設施爆發式增長"}},
+             "michael_burry": {"NVDA": {"signal": "bearish", "confidence": 75, "reasoning": "客戶資本支出可持續性存疑，估值過熱"}}
+           },
+           "modelName": "gpt-4o",
+           "numRounds": 2
+         }'
+```
+
+---
+
+## 🤖 14 位 AI 投資大師與分析師陣容
+
+詳細模型演算法與分析指標請參閱 👉 [**AGENTS.md**](./AGENTS.md)。
+
+| Key | 顯示名稱 | 核心流派與特點 |
+|:---|:---|:---|
+| `warren_buffett` | **Warren Buffett** | 護城河、持續高 ROE、可預測現金流、30% 安全邊際 |
+| `charlie_munger` | **Charlie Munger** | 逆向思維、多元思維模型、企業定價權、管理層誠信 |
+| `ben_graham` | **Ben Graham** | 安全邊際、雪茄煙蒂法、流動資產淨值 (NCAV) |
+| `cathie_wood` | **Cathie Wood** | 顛覆性創新、5 年 S 曲線、指數型技術成長 |
+| `bill_ackman` | **Bill Ackman** | 激進主義價值投資、高進入壁壘、營運改造催化劑 |
+| `nancy_pelosi` | **Nancy Pelosi** | 國會議員交易記錄追蹤、產業法案與政府補貼受惠者 |
+| `michael_burry` | **Michael Burry** | 深度逆向價值、自由現金流收益率 (FCF Yield)、隱藏債務 |
+| `peter_lynch` | **Peter Lynch** | 生活選股法、本益成長比 (PEG < 1.0)、尋找 10 倍股 |
+| `phil_fisher` | **Phil Fisher** | 15 點質化調研、高研發回報率、長期卓越複合成長 |
+| `wsb` | **WallStreetBets** | 散戶熱度、迷因潛力、軋空機會、YOLO 選擇權動能 |
+| `technical_analyst` | **Technical Analyst** | 均線系統、RSI、MACD、布林通道量化指標 |
+| `fundamentals_analyst` | **Fundamentals Analyst** | 財務三表深度審查、利潤率與營收品質評估 |
+| `sentiment_analyst` | **Sentiment Analyst** | 2md 即時全球新聞情緒評估、內部人買賣超分析 |
+| `valuation_analyst` | **Valuation Analyst** | 現金流量折現模型 (DCF)、EV/EBITDA、相對估值倍數 |
+
+---
+
+## 💰 風險管理 - 動態倉位分配
 
 系統會根據分析的標的物數量，**自動調整每個標的物的投資上限比例**：
 
@@ -195,197 +191,7 @@ curl -X POST "http://localhost:6000/api/analysis" \
 | 4 個 | **25%** | 平均分配 |
 | 5+ 個 | **20%** | 分散風險 |
 
-**範例：**
-- 分析 `TSLA` 一檔股票，初始現金 $100,000 → 最大可投入 $100,000
-- 分析 `TSLA,NVDA` 兩檔股票 → 每檔最大可投入 $50,000
-- 分析 `TSLA,NVDA,AAPL,GOOGL,AMZN` 五檔股票 → 每檔最大可投入 $20,000
-
-#### **可用的 `selectedAnalysts` 選項**
-
-你可以在請求中指定以下任意組合的分析師（或留空使用全部）：
-
-**價值投資大師：**
-```json
-["ben_graham", "bill_ackman", "charlie_munger", "michael_burry", "peter_lynch", "phil_fisher", "warren_buffett"]
-```
-
-**成長與創新：**
-```json
-["cathie_wood"]
-```
-
-**技術與情緒分析：**
-```json
-["nancy_pelosi", "wsb", "technical_analyst", "sentiment_analyst"]
-```
-
-**基本面與估值：**
-```json
-["fundamentals_analyst", "valuation_analyst"]
-```
-
-**完整範例（使用多個分析師）：**
-```bash
-curl -X POST "http://localhost:6000/api/analysis" \
-     -H "Content-Type: application/json" \
-     -d '{
-           "tickers": "AAPL,NVDA",
-           "selectedAnalysts": ["warren_buffett", "peter_lynch", "technical_analyst"],
-           "modelName": "gpt-4o",
-           "startDate": "2024-09-01",
-           "endDate": "2024-11-21",
-           "initialCash": 50000
-         }'
-```
-
-#### **�📤 回應範例**
-```json
-{
-  "analyst_signals": {
-    "ben_graham_agent": {
-      "tsla": {
-        "confidence": 80.0,
-        "reasoning": "Tesla's financial assessment reveals several weaknesses from a Graham perspective...",
-        "signal": "bearish"
-      }
-    },
-    "risk_management_agent": {
-      "tsla": {
-        "current_price": 236.25,
-        "reasoning": {
-          "available_cash": 100000.0,
-          "current_position": 0.0,
-          "portfolio_value": 100000.0,
-          "position_limit": 20000.0,
-          "remaining_limit": 20000.0
-        },
-        "remaining_position_limit": 20000.0
-      }
-    }
-  },
-  "decisions": {
-    "tsla": {
-      "action": "short",
-      "confidence": 80.0,
-      "quantity": 84,
-      "reasoning": "The analysis by the ben_graham_agent indicates a strong bearish signal..."
-    }
-  }
-}
-```
-
 ---
 
-# AI Hedge Fund API (English)
-
-## 🚀 Project Overview
-This project extends `virattt/ai-hedge-fund` and `KRSHH/ritadel`,
-providing a **RESTful API** for external applications to query AI-driven investment insights.
-
-**Major Improvements:**
-- ✅ **Python 3.13 (Switched from Poetry to Pip)**
-- ✅ **Built-in Flask API (default port: `6000`)**
-- ✅ **Supports multiple LLMs (GPT-4o, Claude 3, LLaMA3, Gemini)**
-- ✅ **Financial Data APIs (Alpha Vantage, StockData, Finnhub, etc.)**
-- ✅ **Docker-ready, deploy via `docker run`**
-- ✅ **14 Professional AI Investment Analysts covering Value, Growth, Technical Analysis strategies**
-
-Web
-<img width="1516" alt="image" src="https://github.com/user-attachments/assets/e2d443f9-0a48-44ee-a9f4-a61bdfe60e96" />
-
-## 📌 Installation
-
-### **1️⃣ Clone the Repository**
-```bash
-git clone https://github.com/tbdavid2019/ai-hedge-fund-API.git
-cd ai-hedge-fund-API
-```
-
-### **2️⃣ Set Up Virtual Environment & Install Dependencies**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### **3️⃣ Configure `.env` File**
-```ini
-OPENAI_API_KEY=your-openai-api-key
-ANTHROPIC_API_KEY=your-anthropic-api-key
-GROQ_API_KEY=your-groq-api-key
-GEMINI_API_KEY=your-gemini-api-key
-ALPHA_VANTAGE_API_KEY=your-alpha-vantage-key
-STOCKDATA_API_KEY=your-stockdata-key
-FINNHUB_API_KEY=your-finnhub-key
-EODHD_API_KEY=your-eodhd-key
-```
-
-## 🚀 Start API Server
-```bash
-python webui2.py --api
-```
-(Default API runs on `http://localhost:6000`)
-
-## 🤖 **Available AI Investment Analysts**
-
-This project includes **14 professional AI investment analysts**, each based on real investment masters' strategies:
-
-**📊 Value Investing Masters:** `ben_graham`, `bill_ackman`, `charlie_munger`, `michael_burry`, `peter_lynch`, `phil_fisher`, `warren_buffett`
-
-**🚀 Growth & Innovation:** `cathie_wood`
-
-**📈 Technical & Sentiment:** `nancy_pelosi`, `wsb`, `technical_analyst`, `sentiment_analyst`
-
-**📐 Fundamentals & Valuation:** `fundamentals_analyst`, `valuation_analyst`
-
-_(See Chinese section above for detailed strategy descriptions)_
-
----
-
-## 📡 Docker Deployment
-
-### **1️⃣ Build Docker Image**
-```bash
-docker build -t ai-hedge-fund-api .
-```
-
-### **2️⃣ Run Container**
-```bash
-docker run --env-file .env -p 6000:6000 ai-hedge-fund-api
-```
-
-## 🔍 API Usage
-
-### **1️⃣ Stock Analysis API**
-#### **📥 Request**
-```bash
-curl -X POST "http://localhost:6000/api/analysis" \
-     -H "Content-Type: application/json" \
-     -d '{
-           "tickers": "tsla",
-           "selectedAnalysts": ["ben_graham"],
-           "modelName": "gpt-4o"
-         }'
-```
-
-#### **� Request Parameters**
-
-| Parameter | Type | Required | Description | Example |
-|:---|:---|:---:|:---|:---|
-| `tickers` | string | ✅ | Stock symbols (comma-separated) | `"AAPL,TSLA,NVDA"` |
-| `selectedAnalysts` | array | ⚠️ | Analysts to use (empty=all) | `["ben_graham", "warren_buffett"]` |
-| `modelName` | string | ✅ | LLM model name | `"gpt-4o"`, `"claude-3-5-sonnet-20241022"` |
-| `startDate` | string | ❌ | Analysis start date (default: 3 months ago) | `"2024-01-01"` |
-| `endDate` | string | ❌ | Analysis end date (default: today) | `"2024-12-31"` |
-| `initialCash` | number | ❌ | Initial cash (default: 100000) | `100000` |
-
-**Available `selectedAnalysts` options:** See the list in Chinese section above or leave empty to use all analysts.
-
-#### **📤 Response Example**
-_(See JSON example in Chinese section)_
-
-
-<img width="1601" alt="image" src="https://github.com/user-attachments/assets/0c2157e0-071c-4c9d-a15a-04c02912242a" />
-
-
+## 📄 License
+本專案基於 [MIT License](LICENSE) 開源。
