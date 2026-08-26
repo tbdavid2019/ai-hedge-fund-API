@@ -177,6 +177,8 @@ Run an investment committee debate with pre-computed analyst signals.
    - Select `["warren_buffett", "ben_graham", "charlie_munger", "fundamentals_analyst"]`.
 4. **For Non-US Stocks** (e.g. Taiwan `2330.TW`, Hong Kong `0001.HK`):
    - The system automatically normalizes ticker suffixes and leverages 2md search for global news and sentiment.
+5. **Bilingual Support (English & Traditional Chinese / 雙語輸出)**:
+   - All `reasoning`, `discussion_summary`, `consensus_view`, `dissenting_opinions`, and `conversation_transcript` automatically provide comprehensive bilingual explanations in English and Traditional Chinese (【繁體中文解析】).
 
 ---
 
