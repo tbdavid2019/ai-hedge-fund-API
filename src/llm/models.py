@@ -34,26 +34,16 @@ class LLMModel(BaseModel):
 
 # Define available models
 AVAILABLE_MODELS = [
-    # Anthropic Models
+    # Primary default model
     LLMModel(
-        display_name="[anthropic] claude-3.7-sonnet",
-        model_name="claude-3-7-sonnet-latest",
-        provider=ModelProvider.ANTHROPIC
-    ),
-    LLMModel(
-        display_name="[anthropic] claude-3.5-sonnet",
-        model_name="claude-3-5-sonnet-latest",
-        provider=ModelProvider.ANTHROPIC
-    ),
-    LLMModel(
-        display_name="[anthropic] claude-3.5-haiku",
-        model_name="claude-3-5-haiku-latest",
-        provider=ModelProvider.ANTHROPIC
+        display_name="[nen.com.tw] deepseek-v4-flash (Primary Default)",
+        model_name="deepseek-v4-flash",
+        provider=ModelProvider.OPENAI_COMPATIBLE
     ),
 
     # OpenAI Models
     LLMModel(
-        display_name="[openai] gpt-4o",
+        display_name="[openai] gpt-4o (Fallback)",
         model_name="gpt-4o",
         provider=ModelProvider.OPENAI
     ),
@@ -76,6 +66,23 @@ AVAILABLE_MODELS = [
         display_name="[openai] gpt-4.5-preview",
         model_name="gpt-4.5-preview",
         provider=ModelProvider.OPENAI
+    ),
+
+    # Anthropic Models
+    LLMModel(
+        display_name="[anthropic] claude-3.7-sonnet",
+        model_name="claude-3-7-sonnet-latest",
+        provider=ModelProvider.ANTHROPIC
+    ),
+    LLMModel(
+        display_name="[anthropic] claude-3.5-sonnet",
+        model_name="claude-3-5-sonnet-latest",
+        provider=ModelProvider.ANTHROPIC
+    ),
+    LLMModel(
+        display_name="[anthropic] claude-3.5-haiku",
+        model_name="claude-3-5-haiku-latest",
+        provider=ModelProvider.ANTHROPIC
     ),
 
     # Gemini Models
@@ -129,13 +136,30 @@ def get_model_info(model_name: str) -> Optional[LLMModel]:
     return next((model for model in AVAILABLE_MODELS if model.model_name == model_name), None)
 
 
-def get_model(model_name: str, model_provider: ModelProvider) -> Any:
+def get_model(model_name: str = None, model_provider: ModelProvider = None) -> Any:
+    """
+    Instantiate Chat LLM model.
+    Defaults to Primary Model (deepseek-v4-flash via https://nen.com.tw/v1/).
+    """
+    if not model_name:
+        model_name = os.getenv("DEFAULT_MODEL", "deepseek-v4-flash")
+    
     # Auto-detect provider if model matches known signatures
     if isinstance(model_provider, str):
         try:
             model_provider = ModelProvider(model_provider)
         except Exception:
             pass
+
+    if model_name == "deepseek-v4-flash" or (model_provider == ModelProvider.OPENAI_COMPATIBLE and "nen" in os.getenv("OPENAI_BASE_URL", "https://nen.com.tw/v1")):
+        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("NEN_API_KEY") or os.getenv("OPENAI_API_KEY", "sk-XqYJN7YDjomSEeOPn9GsHvSpspYLuQrxdgQc2zcA3kvuZD34")
+        base_url = os.getenv("PRIMARY_BASE_URL") or os.getenv("OPENAI_BASE_URL", "https://nen.com.tw/v1")
+        return ChatOpenAI(
+            model=model_name,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=0.2
+        )
 
     if model_provider == ModelProvider.GROQ:
         api_key = os.getenv("GROQ_API_KEY")
@@ -144,11 +168,15 @@ def get_model(model_name: str, model_provider: ModelProvider) -> Any:
         return ChatGroq(model=model_name, api_key=api_key)
 
     elif model_provider == ModelProvider.OPENAI:
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv("FALLBACK_API_KEY") or os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OpenAI API key not found. Please set OPENAI_API_KEY in .env file.")
         
-        base_url = os.getenv("OPENAI_BASE_URL") or os.getenv("OPENAI_API_BASE")
+        base_url = os.getenv("FALLBACK_BASE_URL") or os.getenv("OPENAI_BASE_URL")
+        # If base_url is nen.com.tw but model is gpt-4o, use official openai base url
+        if base_url and "nen.com.tw" in base_url and model_name.startswith("gpt-"):
+            base_url = "https://api.openai.com/v1"
+            
         if base_url:
             return ChatOpenAI(model=model_name, api_key=api_key, base_url=base_url)
         return ChatOpenAI(model=model_name, api_key=api_key)
@@ -164,7 +192,6 @@ def get_model(model_name: str, model_provider: ModelProvider) -> Any:
         if not api_key:
             raise ValueError("Gemini API key not found. Please set GEMINI_API_KEY in .env file.")
         
-        # Using Google OpenAI compatibility layer
         return ChatOpenAI(
             api_key=api_key,
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -172,7 +199,7 @@ def get_model(model_name: str, model_provider: ModelProvider) -> Any:
         )
 
     elif model_provider == ModelProvider.DEEPSEEK:
-        api_key = os.getenv("DEEPSEEK_API_KEY")
+        api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("DeepSeek API key not found. Please set DEEPSEEK_API_KEY in .env file.")
         return ChatOpenAI(
@@ -182,8 +209,8 @@ def get_model(model_name: str, model_provider: ModelProvider) -> Any:
         )
 
     elif model_provider == ModelProvider.OPENAI_COMPATIBLE:
-        api_key = os.getenv("CUSTOM_API_KEY") or os.getenv("OPENAI_API_KEY", "dummy-key")
-        base_url = os.getenv("CUSTOM_BASE_URL") or os.getenv("OPENAI_BASE_URL", "http://localhost:8000/v1")
+        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("CUSTOM_API_KEY") or os.getenv("OPENAI_API_KEY", "sk-XqYJN7YDjomSEeOPn9GsHvSpspYLuQrxdgQc2zcA3kvuZD34")
+        base_url = os.getenv("PRIMARY_BASE_URL") or os.getenv("CUSTOM_BASE_URL") or os.getenv("OPENAI_BASE_URL", "https://nen.com.tw/v1")
         return ChatOpenAI(
             api_key=api_key,
             base_url=base_url,
@@ -195,3 +222,15 @@ def get_model(model_name: str, model_provider: ModelProvider) -> Any:
     if not api_key:
         raise ValueError(f"Unknown provider {model_provider} and no OPENAI_API_KEY found.")
     return ChatOpenAI(model=model_name, api_key=api_key)
+
+
+def get_fallback_model(fallback_model_name: str = "gpt-4o") -> Any:
+    """Get official OpenAI ChatGPT fallback model instance"""
+    api_key = os.getenv("FALLBACK_API_KEY") or os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("Fallback OpenAI API key not found.")
+    return ChatOpenAI(
+        model=fallback_model_name,
+        api_key=api_key,
+        base_url="https://api.openai.com/v1"
+    )

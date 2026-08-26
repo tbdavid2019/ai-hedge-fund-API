@@ -11,6 +11,7 @@ This document is designed for AI Agents and LLMs to understand and interact with
 - **API Documentation**: `http://localhost:6000/docs`
 - **Health Check**: `http://localhost:6000/api/health`
 - **Swagger JSON**: `http://localhost:6000/static/swagger.json`
+- **Default LLM Engine**: `deepseek-v4-flash` (`https://nen.com.tw/v1/`) with seamless `gpt-4o` (ChatGPT) automatic fallback.
 
 ---
 
@@ -21,7 +22,17 @@ Execute deep investment analysis across selected AI investor personas with optio
 
 - **Endpoint**: `POST /api/analysis`
 - **Headers**: `Content-Type: application/json`
-- **Request Body (JSON)**:
+- **Minimal Request Body (JSON)**:
+
+```json
+{
+  "tickers": "TSLA,NVDA",
+  "enableRoundTable": true,
+  "roundTableRounds": 2
+}
+```
+
+- **Full Request Body Example (JSON)**:
 
 ```json
 {
@@ -33,7 +44,6 @@ Execute deep investment analysis across selected AI investor personas with optio
     "wsb",
     "technical_analyst"
   ],
-  "modelName": "gpt-4o",
   "enableRoundTable": true,
   "roundTableRounds": 2,
   "initialCash": 100000,
@@ -48,13 +58,12 @@ Execute deep investment analysis across selected AI investor personas with optio
 |:---|:---|:---:|:---|:---|
 | `tickers` | string / array | ✅ | - | Ticker symbols, e.g. `"TSLA,NVDA"`, `"2330.TW"`, `"0001.HK"` |
 | `selectedAnalysts` | array | ❌ | `[]` (all 14) | List of analyst keys to participate (see table below) |
-| `modelName` | string | ❌ | `"gpt-4o"` | LLM model (`gpt-4o`, `claude-3-7-sonnet-latest`, `gemini-2.0-flash`, `deepseek-chat`) |
-| `modelProvider` | string | ❌ | Auto-inferred | Model provider (`OpenAI`, `Anthropic`, `Gemini`, `DeepSeek`, `Groq`) |
 | `enableRoundTable` | boolean | ❌ | `false` | Enable multi-round debate committee after analyst signals |
 | `roundTableRounds` | integer | ❌ | `2` | Number of debate rounds (1 to 3) |
 | `initialCash` | number | ❌ | `100000` | Starting portfolio cash |
 | `startDate` | string | ❌ | 3 months ago | Historical start date (`YYYY-MM-DD`) |
 | `endDate` | string | ❌ | Today | Analysis end date (`YYYY-MM-DD`) |
+| `modelName` | string | ❌ | Server Default | *(Optional)* Override LLM model (Server automatically defaults to `deepseek-v4-flash` with `gpt-4o` fallback) |
 
 #### Response Format (JSON):
 ```json
@@ -109,7 +118,6 @@ Run an investment committee debate with pre-computed analyst signals.
       "NVDA": {"signal": "bearish", "confidence": 75, "reasoning": "Hyperscaler capex peak and concentration risk"}
     }
   },
-  "modelName": "gpt-4o",
   "numRounds": 2
 }
 ```
