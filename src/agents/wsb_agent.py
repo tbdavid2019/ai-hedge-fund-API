@@ -169,95 +169,111 @@ def wsb_agent(state: AgentState):
 def get_reddit_posts(ticker: str, start_date: str = None, end_date: str = None, limit: int = 10) -> list[RedditPost]:
     """
     Fetch a small number of recent, high-quality Reddit posts from r/wallstreetbets about a specific ticker.
-    
-    Args:
-        ticker: Stock ticker to search for
-        start_date: Not used (kept for API compatibility)
-        end_date: Not used (kept for API compatibility)
-        limit: Maximum number of posts to fetch (default: 10)
-        
-    Returns:
-        List of RedditPost objects, prioritizing recent posts with good engagement
+    Supports PRAW official API with automatic fallback to 2md search engine.
     """
+    all_posts = []
+
+    # 1. Try PRAW official API
     try:
-        # Try to initialize PRAW client
         reddit_client_id = os.environ.get("REDDIT_CLIENT_ID")
         reddit_client_secret = os.environ.get("REDDIT_CLIENT_SECRET")
         reddit_user_agent = os.environ.get("REDDIT_USER_AGENT", "wsb_agent:v1.0")
         
-        if not reddit_client_id or not reddit_client_secret:
-            # Gracefully handle missing credentials
-            print("Reddit API credentials not found. Set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET in environment")
-            return []
-        
-        # Initialize Reddit client
-        reddit = praw.Reddit(
-            client_id=reddit_client_id,
-            client_secret=reddit_client_secret,
-            user_agent=reddit_user_agent
-        )
-        
-        # Only use r/wallstreetbets
-        subreddit = reddit.subreddit("wallstreetbets")
-        all_posts = []
-        
-        # Search terms - both "$TICKER" and "TICKER" formats
-        search_terms = [f"${ticker}", ticker]
-        initial_fetch_limit = 20  # Fetch more initially to filter for quality
-        
-        # First, try to get the newest posts (last 24 hours)
-        for term in search_terms:
-            new_results = subreddit.search(
-                term,
-                sort="new",
-                time_filter="day",
-                limit=initial_fetch_limit//len(search_terms)
+        if reddit_client_id and reddit_client_secret:
+            reddit = praw.Reddit(
+                client_id=reddit_client_id,
+                client_secret=reddit_client_secret,
+                user_agent=reddit_user_agent
             )
             
-            for post in new_results:
-                # Only add posts with at least 10 upvotes
-                if post.score >= 10:
-                    reddit_post = create_reddit_post(post)
-                    all_posts.append(reddit_post)
-                    print(f"NEW: {post.title} - {reddit_post.url} (↑{post.score}, {post.num_comments} comments)")
-        
-        # If we don't have enough posts, try hot posts from the past week
-        if len(all_posts) < limit:
-            hot_results = subreddit.search(
-                term,
-                sort="hot",
-                time_filter="week",
-                limit=initial_fetch_limit//len(search_terms)
-            )
+            subreddit = reddit.subreddit("wallstreetbets")
+            search_terms = [f"${ticker}", ticker]
+            initial_fetch_limit = 20
             
-            for post in hot_results:
-                # Skip posts we've already added
-                if any(p.url == f"https://reddit.com{post.permalink}" for p in all_posts):
-                    continue
-                    
-                reddit_post = create_reddit_post(post)
-                all_posts.append(reddit_post)
-                print(f"HOT: {post.title} - {reddit_post.url} (↑{post.score}, {post.num_comments} comments)")
+            for term in search_terms:
+                new_results = subreddit.search(
+                    term,
+                    sort="new",
+                    time_filter="day",
+                    limit=initial_fetch_limit // len(search_terms)
+                )
                 
-                # Break once we have enough posts
+                for post in new_results:
+                    if post.score >= 10:
+                        reddit_post = create_reddit_post(post)
+                        all_posts.append(reddit_post)
+            
+            if len(all_posts) < limit:
+                for term in search_terms:
+                    hot_results = subreddit.search(
+                        term,
+                        sort="hot",
+                        time_filter="week",
+                        limit=initial_fetch_limit // len(search_terms)
+                    )
+                    
+                    for post in hot_results:
+                        if any(p.url == f"https://reddit.com{post.permalink}" for p in all_posts):
+                            continue
+                        reddit_post = create_reddit_post(post)
+                        all_posts.append(reddit_post)
+                        if len(all_posts) >= limit:
+                            break
+    except Exception as e:
+        print(f"PRAW Reddit API error: {str(e)}")
+
+    # 2. Fallback to 2md web search for Reddit/WSB posts
+    if not all_posts:
+        try:
+            from tools.url2md import search_web_2md
+            print(f"[WSB Agent] Searching Reddit discussions via 2md for ${ticker}...")
+            queries = [
+                f"site:reddit.com/r/wallstreetbets {ticker}",
+                f"{ticker} reddit wallstreetbets stock",
+                f"{ticker} stock discussion reddit",
+            ]
+            
+            seen_urls = set()
+            for q in queries:
+                items = search_web_2md(q, limit=limit)
+                for item in items:
+                    url = item.get("url", "")
+                    title = item.get("title", "")
+                    desc = item.get("description", "")
+                    
+                    if url and url not in seen_urls and ("reddit.com" in url or "wallstreetbets" in title.lower() or ticker.lower() in title.lower()):
+                        seen_urls.add(url)
+                        # Determine sentiment
+                        full_text = f"{title} {desc}".lower()
+                        bullish_words = ["bull", "buy", "calls", "moon", "rocket", "yolo", "tendies", "gain", "long", "hold", "pump"]
+                        bearish_words = ["bear", "put", "short", "drill", "crash", "tank", "loss", "guh", "dump", "sell"]
+                        
+                        b_cnt = sum(1 for w in bullish_words if w in full_text)
+                        s_cnt = sum(1 for w in bearish_words if w in full_text)
+                        
+                        sentiment = "bullish" if b_cnt > s_cnt else ("bearish" if s_cnt > b_cnt else "neutral")
+                        
+                        post = RedditPost(
+                            title=title,
+                            score=max(10, (b_cnt + s_cnt) * 50 + 25),
+                            upvote_ratio=0.85 if sentiment == "bullish" else 0.65,
+                            num_comments=max(5, (b_cnt + s_cnt) * 15 + 10),
+                            created_utc=datetime.now().timestamp() - 3600,
+                            url=url,
+                            text=desc,
+                            sentiment=sentiment
+                        )
+                        all_posts.append(post)
+                        print(f"2md WSB Result: {title} ({sentiment}) - {url}")
+                        
+                    if len(all_posts) >= limit:
+                        break
                 if len(all_posts) >= limit:
                     break
-        
-        # Sort by a combination of recency (70%) and score (30%) to get recent, high-quality posts
-        one_day_ago = datetime.now().timestamp() - 86400
-        all_posts.sort(key=lambda x: (
-            # Higher weight to posts from the last 24 hours
-            (2 if x.created_utc > one_day_ago else 1) * 0.7 +
-            # Some weight to post score
-            (min(x.score, 1000) / 1000) * 0.3
-        ), reverse=True)
-        
-        # Return the top posts (limited to requested amount)
-        return all_posts[:limit]
-    
-    except Exception as e:
-        print(f"Error fetching Reddit data: {str(e)}")
-        return []
+        except Exception as e:
+            print(f"[WSB Agent] 2md search fallback error: {str(e)}")
+
+    return all_posts[:limit]
 
 
 def create_reddit_post(post) -> RedditPost:

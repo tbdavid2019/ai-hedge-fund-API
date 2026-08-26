@@ -55,6 +55,8 @@ def run_hedge_fund(
     model_name: str = "gpt-4o",
     model_provider: str = "OpenAI",
     is_crypto: bool = False,
+    enable_round_table: bool = False,
+    round_table_rounds: int = 2,
 ):
     # Start progress tracking
     progress.start()
@@ -98,7 +100,6 @@ def run_hedge_fund(
             portfolio_decision = result["data"]["portfolio_decision"]
         else:
             # Handle the case where portfolio_decision might be missing
-            # Look for it in portfolio_management_agent output in messages
             for message in reversed(result["messages"]):
                 if hasattr(message, "name") and message.name == "portfolio_management_agent":
                     try:
@@ -110,11 +111,30 @@ def run_hedge_fund(
                 portfolio_decision = {}
                 print(f"{Fore.RED}Warning: Could not find portfolio decisions in output{Style.RESET_ALL}")
         
-        # Return result with analyst signals for further processing
-        return {
+        response_dict = {
             "decisions": portfolio_decision,
             "analyst_signals": result["data"]["analyst_signals"],
         }
+
+        # Run Multi-Round Round Table if enabled
+        if enable_round_table:
+            progress.start()
+            from agents.round_table import round_table
+            rt_results = round_table(
+                data={
+                    "tickers": tickers,
+                    "analyst_signals": result["data"]["analyst_signals"]
+                },
+                model_name=model_name,
+                model_provider=model_provider,
+                show_reasoning=show_reasoning,
+                num_rounds=round_table_rounds,
+            )
+            progress.stop()
+            response_dict["round_table"] = rt_results
+            response_dict["analyst_signals"]["round_table"] = rt_results
+
+        return response_dict
     except Exception as e:
         progress.stop()
         print(f"Error running hedge fund: {e}")

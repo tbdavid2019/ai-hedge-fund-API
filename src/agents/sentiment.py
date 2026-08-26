@@ -45,9 +45,22 @@ def sentiment_agent(state: AgentState):
                               np.where(sentiment == "positive", "bullish", "neutral")).tolist()
         
         progress.update_status("sentiment_agent", ticker, "Combining signals")
-        # Combine signals from both sources with weights
-        insider_weight = 0.3
-        news_weight = 0.7
+        # Dynamically set weights based on available data
+        has_insiders = len(insider_signals) > 0
+        has_news = len(news_signals) > 0
+
+        if has_insiders and has_news:
+            insider_weight = 0.3
+            news_weight = 0.7
+        elif has_insiders:
+            insider_weight = 1.0
+            news_weight = 0.0
+        elif has_news:
+            insider_weight = 0.0
+            news_weight = 1.0
+        else:
+            insider_weight = 0.0
+            news_weight = 0.0
         
         # Calculate weighted signal counts
         bullish_signals = (
@@ -68,10 +81,13 @@ def sentiment_agent(state: AgentState):
 
         # Calculate confidence level based on the weighted proportion
         total_weighted_signals = len(insider_signals) * insider_weight + len(news_signals) * news_weight
-        confidence = 0  # Default confidence when there are no signals
+        confidence = 50.0  # Default neutral confidence
         if total_weighted_signals > 0:
             confidence = round(max(bullish_signals, bearish_signals) / total_weighted_signals, 2) * 100
-        reasoning = f"Weighted Bullish signals: {bullish_signals:.1f}, Weighted Bearish signals: {bearish_signals:.1f}"
+        
+        insider_summary = f"{insider_signals.count('bullish')} buy / {insider_signals.count('bearish')} sell" if has_insiders else "No insider data"
+        news_summary = f"{news_signals.count('bullish')} bullish / {news_signals.count('bearish')} bearish / {news_signals.count('neutral')} neutral" if has_news else "No news data"
+        reasoning = f"News Sentiment ({len(news_signals)} items): {news_summary}; Insider Trades: {insider_summary}."
 
         sentiment_analysis[ticker] = {
             "signal": overall_signal,

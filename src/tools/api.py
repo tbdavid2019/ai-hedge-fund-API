@@ -1080,6 +1080,34 @@ def get_insider_trades(
         # Fallback to empty result
         return []
 
+def _classify_sentiment_text(text: str) -> str:
+    """Classify sentiment of financial news headline or text into positive, negative, or neutral."""
+    if not text:
+        return "neutral"
+    text_lower = text.lower()
+    
+    pos_words = [
+        "surge", "soar", "jump", "rally", "gain", "beat", "upgrade", "growth",
+        "bullish", "outperform", "record", "profit", "positive", "high", "breakout",
+        "buy", "strong", "upside", "expansion", "partnership", "success", "innovat",
+        "漲", "大漲", "飆", "利多", "突破", "買進", "獲利", "成長", "創新高"
+    ]
+    neg_words = [
+        "drop", "fall", "plunge", "sink", "miss", "downgrade", "loss", "warning",
+        "bearish", "underperform", "crash", "slump", "negative", "low", "breakdown",
+        "sell", "weak", "downside", "lawsuit", "investigation", "debt", "risk",
+        "跌", "重挫", "大跌", "利空", "虧損", "賣出", "下修", "警訊", "創新低"
+    ]
+    
+    pos_score = sum(1 for w in pos_words if w in text_lower)
+    neg_score = sum(1 for w in neg_words if w in text_lower)
+    
+    if pos_score > neg_score:
+        return "positive"
+    elif neg_score > pos_score:
+        return "negative"
+    return "neutral"
+
 def get_company_news(
     ticker: str,
     end_date: str,
@@ -1087,7 +1115,7 @@ def get_company_news(
     limit: int = 100,
     is_crypto: bool = False
 ) -> list[CompanyNews]:
-    """Fetch news articles for a ticker."""
+    """Fetch news articles for a ticker with sentiment analysis and 2md fallback."""
     if is_crypto:
         return get_crypto_news(ticker, end_date, start_date, limit)
     
@@ -1103,64 +1131,78 @@ def get_company_news(
         if filtered_data:
             return filtered_data
 
-    # If not in cache or insufficient data, fetch from Yahoo Finance
+    news_items = []
+
+    # 1. Fetch from Yahoo Finance
     try:
-        # Convert dates to datetime objects for comparison
         end_dt = datetime.strptime(end_date, '%Y-%m-%d')
         start_dt = datetime.strptime(start_date, '%Y-%m-%d') if start_date else end_dt - timedelta(days=90)
         
-        # Get news from Yahoo Finance
         yf_ticker = yf.Ticker(yf_ticker_str)
-        news_data = yf_ticker.news
+        news_data = yf_ticker.news or []
         
-        # Process the news
-        news_items = []
         for news in news_data:
-            # Get the timestamp and convert to date
             timestamp = news.get('providerPublishTime', 0)
-            news_date = datetime.fromtimestamp(timestamp)
+            news_date = datetime.fromtimestamp(timestamp) if timestamp else datetime.now()
             date_str = news_date.strftime('%Y-%m-%d')
             
-            # Apply date filtering
             if news_date < start_dt or news_date > end_dt:
                 continue
                 
-            # Extract source and author
+            title = news.get('title', '')
             publisher = news.get('publisher', '')
-            author = news.get('publisher', '')
+            sentiment = _classify_sentiment_text(title)
             
-            # Extract sentiment (not available in Yahoo, set neutral as default)
-            sentiment = "neutral"
-            
-            # Create the news object
             news_item = CompanyNews(
                 ticker=ticker,
-                title=news.get('title', ''),
-                author=author,
-                source=publisher,
+                title=title,
+                author=publisher,
+                source=publisher or "Yahoo Finance",
                 date=date_str,
                 url=news.get('link', ''),
                 sentiment=sentiment
             )
-            
             news_items.append(news_item)
-            
-            # Respect the limit
             if len(news_items) >= limit:
                 break
-        
-        # Sort by date, newest first
-        news_items.sort(key=lambda x: x.date, reverse=True)
-        
-        # Cache the results
-        if news_items:
-            _cache.set_company_news(ticker, [news.model_dump() for news in news_items])
-            
-        return news_items
-        
     except Exception as e:
-        print(f"Error fetching company news for {ticker}: {str(e)}")
-        return []
+        print(f"Yahoo Finance news error for {ticker}: {str(e)}")
+
+    # 2. Fallback / supplementary search via 2md service if news is sparse
+    if len(news_items) < 5:
+        try:
+            from tools.url2md import search_web_2md
+            query = f"{ticker} stock news {end_date[:4]}"
+            search_results = search_web_2md(query, limit=limit - len(news_items))
+            for item in search_results:
+                title = item.get("title", "")
+                desc = item.get("description", "")
+                full_text = f"{title} {desc}"
+                sentiment = _classify_sentiment_text(full_text)
+                
+                news_item = CompanyNews(
+                    ticker=ticker,
+                    title=title,
+                    author="2md Search",
+                    source="Web",
+                    date=end_date,
+                    url=item.get("url", ""),
+                    sentiment=sentiment
+                )
+                news_items.append(news_item)
+                if len(news_items) >= limit:
+                    break
+        except Exception as e:
+            print(f"2md news search fallback error for {ticker}: {str(e)}")
+
+    # Sort by date, newest first
+    news_items.sort(key=lambda x: x.date, reverse=True)
+    
+    # Cache the results
+    if news_items:
+        _cache.set_company_news(ticker, [news.model_dump() for news in news_items])
+        
+    return news_items
 
 def get_crypto_news(
     ticker: str,

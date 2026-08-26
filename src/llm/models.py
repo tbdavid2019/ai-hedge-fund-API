@@ -4,7 +4,7 @@ from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from enum import Enum
 from pydantic import BaseModel
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 class ModelProvider(str, Enum):
@@ -12,7 +12,9 @@ class ModelProvider(str, Enum):
     OPENAI = "OpenAI"
     GROQ = "Groq"
     ANTHROPIC = "Anthropic"
-    GEMINI = "Gemini"  # Add Gemini provider
+    GEMINI = "Gemini"
+    DEEPSEEK = "DeepSeek"
+    OPENAI_COMPATIBLE = "OpenAI-Compatible"
 
 
 class LLMModel(BaseModel):
@@ -27,14 +29,15 @@ class LLMModel(BaseModel):
     
     def is_deepseek(self) -> bool:
         """Check if the model is a DeepSeek model"""
-        return self.model_name.startswith("deepseek")
+        return "deepseek" in self.model_name.lower()
 
 
 # Define available models
 AVAILABLE_MODELS = [
+    # Anthropic Models
     LLMModel(
-        display_name="[anthropic] claude-3.5-haiku",
-        model_name="claude-3-5-haiku-latest",
+        display_name="[anthropic] claude-3.7-sonnet",
+        model_name="claude-3-7-sonnet-latest",
         provider=ModelProvider.ANTHROPIC
     ),
     LLMModel(
@@ -43,20 +46,12 @@ AVAILABLE_MODELS = [
         provider=ModelProvider.ANTHROPIC
     ),
     LLMModel(
-        display_name="[anthropic] claude-3.7-sonnet",
-        model_name="claude-3-7-sonnet-latest",
+        display_name="[anthropic] claude-3.5-haiku",
+        model_name="claude-3-5-haiku-latest",
         provider=ModelProvider.ANTHROPIC
     ),
-    LLMModel(
-        display_name="[groq] deepseek-r1 70b",
-        model_name="deepseek-r1-distill-llama-70b",
-        provider=ModelProvider.GROQ
-    ),
-    LLMModel(
-        display_name="[groq] llama-3.3 70b",
-        model_name="llama-3.3-70b-versatile",
-        provider=ModelProvider.GROQ
-    ),
+
+    # OpenAI Models
     LLMModel(
         display_name="[openai] gpt-4o",
         model_name="gpt-4o",
@@ -68,60 +63,135 @@ AVAILABLE_MODELS = [
         provider=ModelProvider.OPENAI
     ),
     LLMModel(
-        display_name="[openai] o1",
-        model_name="o1",
-        provider=ModelProvider.OPENAI
-    ),
-    LLMModel(
         display_name="[openai] o3-mini",
         model_name="o3-mini",
         provider=ModelProvider.OPENAI
     ),
     LLMModel(
+        display_name="[openai] o1",
+        model_name="o1",
+        provider=ModelProvider.OPENAI
+    ),
+    LLMModel(
+        display_name="[openai] gpt-4.5-preview",
+        model_name="gpt-4.5-preview",
+        provider=ModelProvider.OPENAI
+    ),
+
+    # Gemini Models
+    LLMModel(
         display_name="[gemini] gemini-2.0-flash",
         model_name="gemini-2.0-flash",
         provider=ModelProvider.GEMINI
+    ),
+    LLMModel(
+        display_name="[gemini] gemini-2.0-pro-exp",
+        model_name="gemini-2.0-pro-exp-02-05",
+        provider=ModelProvider.GEMINI
+    ),
+    LLMModel(
+        display_name="[gemini] gemini-1.5-pro",
+        model_name="gemini-1.5-pro",
+        provider=ModelProvider.GEMINI
+    ),
+
+    # DeepSeek Native
+    LLMModel(
+        display_name="[deepseek] deepseek-chat (V3)",
+        model_name="deepseek-chat",
+        provider=ModelProvider.DEEPSEEK
+    ),
+    LLMModel(
+        display_name="[deepseek] deepseek-reasoner (R1)",
+        model_name="deepseek-reasoner",
+        provider=ModelProvider.DEEPSEEK
+    ),
+
+    # Groq Models
+    LLMModel(
+        display_name="[groq] deepseek-r1 70b",
+        model_name="deepseek-r1-distill-llama-70b",
+        provider=ModelProvider.GROQ
+    ),
+    LLMModel(
+        display_name="[groq] llama-3.3 70b",
+        model_name="llama-3.3-70b-versatile",
+        provider=ModelProvider.GROQ
     ),
 ]
 
 # Create LLM_ORDER in the format expected by the UI
 LLM_ORDER = [model.to_choice_tuple() for model in AVAILABLE_MODELS]
 
-def get_model_info(model_name: str) -> LLMModel | None:
+
+def get_model_info(model_name: str) -> Optional[LLMModel]:
     """Get model information by model_name"""
     return next((model for model in AVAILABLE_MODELS if model.model_name == model_name), None)
 
-def get_model(model_name: str, model_provider: ModelProvider) -> ChatOpenAI | ChatGroq | None:
+
+def get_model(model_name: str, model_provider: ModelProvider) -> Any:
+    # Auto-detect provider if model matches known signatures
+    if isinstance(model_provider, str):
+        try:
+            model_provider = ModelProvider(model_provider)
+        except Exception:
+            pass
+
     if model_provider == ModelProvider.GROQ:
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            # Print error to console
-            print(f"API Key Error: Please make sure GROQ_API_KEY is set in your .env file.")
-            raise ValueError("Groq API key not found.  Please make sure GROQ_API_KEY is set in your .env file.")
+            raise ValueError("Groq API key not found. Please set GROQ_API_KEY in .env file.")
         return ChatGroq(model=model_name, api_key=api_key)
+
     elif model_provider == ModelProvider.OPENAI:
-        # Get and validate API key
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            # Print error to console
-            print(f"API Key Error: Please make sure OPENAI_API_KEY is set in your .env file.")
-            raise ValueError("OpenAI API key not found.  Please make sure OPENAI_API_KEY is set in your .env file.")
+            raise ValueError("OpenAI API key not found. Please set OPENAI_API_KEY in .env file.")
+        
+        base_url = os.getenv("OPENAI_BASE_URL") or os.getenv("OPENAI_API_BASE")
+        if base_url:
+            return ChatOpenAI(model=model_name, api_key=api_key, base_url=base_url)
         return ChatOpenAI(model=model_name, api_key=api_key)
+
     elif model_provider == ModelProvider.ANTHROPIC:
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
-            print(f"API Key Error: Please make sure ANTHROPIC_API_KEY is set in your .env file.")
-            raise ValueError("Anthropic API key not found.  Please make sure ANTHROPIC_API_KEY is set in your .env file.")
+            raise ValueError("Anthropic API key not found. Please set ANTHROPIC_API_KEY in .env file.")
         return ChatAnthropic(model=model_name, api_key=api_key)
+
     elif model_provider == ModelProvider.GEMINI:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            print(f"API Key Error: Please make sure GEMINI_API_KEY is set in your .env file.")
-            raise ValueError("Gemini API key not found. Please make sure GEMINI_API_KEY is set in your .env file.")
+            raise ValueError("Gemini API key not found. Please set GEMINI_API_KEY in .env file.")
         
-        # Using OpenAI compatibility layer for Gemini
+        # Using Google OpenAI compatibility layer
         return ChatOpenAI(
             api_key=api_key,
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
             model=model_name
         )
+
+    elif model_provider == ModelProvider.DEEPSEEK:
+        api_key = os.getenv("DEEPSEEK_API_KEY")
+        if not api_key:
+            raise ValueError("DeepSeek API key not found. Please set DEEPSEEK_API_KEY in .env file.")
+        return ChatOpenAI(
+            api_key=api_key,
+            base_url="https://api.deepseek.com/v1",
+            model=model_name
+        )
+
+    elif model_provider == ModelProvider.OPENAI_COMPATIBLE:
+        api_key = os.getenv("CUSTOM_API_KEY") or os.getenv("OPENAI_API_KEY", "dummy-key")
+        base_url = os.getenv("CUSTOM_BASE_URL") or os.getenv("OPENAI_BASE_URL", "http://localhost:8000/v1")
+        return ChatOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            model=model_name
+        )
+
+    # Fallback to OpenAI
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError(f"Unknown provider {model_provider} and no OPENAI_API_KEY found.")
+    return ChatOpenAI(model=model_name, api_key=api_key)

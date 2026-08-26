@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "AI Hedge Fund API",
-    "description": "AI 驅動的投資分析 API，提供多位傳奇投資大師風格的股票分析建議。",
-    "version": "1.0.0",
+    "description": "AI 驅動的頂級投資分析 API，整合 14 位投資大師風格、多輪圓桌辯論會議、即時新聞社群情緒與多模型 LLM 支援。",
+    "version": "2.0.0",
     "contact": {
       "name": "AI Hedge Fund API",
       "url": "https://github.com/tbdavid2019/ai-hedge-fund-API"
@@ -12,15 +12,15 @@
   "servers": [
     {
       "url": "http://localhost:6000",
-      "description": "本地開發伺服器"
+      "description": "本地 / 當前伺服器"
     }
   ],
   "paths": {
     "/api/analysis": {
       "post": {
         "tags": ["Analysis"],
-        "summary": "執行股票分析",
-        "description": "使用 AI 分析師對指定股票進行投資分析，返回投資建議和決策。",
+        "summary": "執行股票分析與圓桌會議",
+        "description": "使用指定的 AI 分析師對股票進行全方位投資分析，並可選擇啟用多輪圓桌會議辯論達成共識決策。",
         "operationId": "runAnalysis",
         "requestBody": {
           "required": true,
@@ -30,30 +30,21 @@
                 "$ref": "#/components/schemas/AnalysisRequest"
               },
               "examples": {
+                "round_table_debate": {
+                  "summary": "多輪圓桌會議完整分析",
+                  "value": {
+                    "tickers": "TSLA,NVDA",
+                    "selectedAnalysts": ["warren_buffett", "cathie_wood", "michael_burry", "wsb", "technical_analyst"],
+                    "modelName": "gpt-4o",
+                    "enableRoundTable": true,
+                    "roundTableRounds": 2
+                  }
+                },
                 "single_stock": {
                   "summary": "單一股票分析",
                   "value": {
                     "tickers": "TSLA",
-                    "selectedAnalysts": ["warren_buffett", "peter_lynch"],
-                    "modelName": "gpt-4o"
-                  }
-                },
-                "multiple_stocks": {
-                  "summary": "多股票分析",
-                  "value": {
-                    "tickers": "TSLA,NVDA,AAPL",
-                    "selectedAnalysts": ["warren_buffett", "charlie_munger", "technical_analyst"],
-                    "modelName": "gpt-4o",
-                    "initialCash": 100000,
-                    "startDate": "2024-09-01",
-                    "endDate": "2024-12-01"
-                  }
-                },
-                "all_analysts": {
-                  "summary": "使用全部分析師",
-                  "value": {
-                    "tickers": "NVDA",
-                    "selectedAnalysts": [],
+                    "selectedAnalysts": ["warren_buffett", "peter_lynch", "michael_burry"],
                     "modelName": "gpt-4o"
                   }
                 }
@@ -85,6 +76,57 @@
         }
       }
     },
+    "/api/round_table": {
+      "post": {
+        "tags": ["Round Table"],
+        "summary": "獨立執行多輪圓桌會議辯論",
+        "description": "傳入各分析師預先分析之訊號，進行多輪跨流派交鋒辯論並生成最終委員會共識決策。",
+        "operationId": "runRoundTable",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoundTableRequest"
+              },
+              "example": {
+                "tickers": "NVDA",
+                "analystSignals": {
+                  "warren_buffett": {
+                    "NVDA": {"signal": "neutral", "confidence": 60, "reasoning": "強大護城河但估值偏高"}
+                  },
+                  "cathie_wood": {
+                    "NVDA": {"signal": "bullish", "confidence": 90, "reasoning": "AI 算力基礎設施爆發式增長"}
+                  },
+                  "michael_burry": {
+                    "NVDA": {"signal": "bearish", "confidence": 75, "reasoning": "客戶資本支出可持續性存疑，估值過熱"}
+                  }
+                },
+                "modelName": "gpt-4o",
+                "numRounds": 2
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "圓桌會議完成",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "round_table": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "tags": ["Health"],
@@ -102,6 +144,10 @@
                     "status": {
                       "type": "string",
                       "example": "healthy"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "2.0.0"
                     },
                     "timestamp": {
                       "type": "string",
@@ -124,12 +170,12 @@
         "properties": {
           "tickers": {
             "type": "string",
-            "description": "股票代碼，多個用逗號分隔",
-            "example": "TSLA,NVDA,AAPL"
+            "description": "股票代碼，多個用逗號分隔，例如 TSLA,NVDA,2330",
+            "example": "TSLA,NVDA"
           },
           "selectedAnalysts": {
             "type": "array",
-            "description": "選擇的分析師列表，空陣列表示使用全部",
+            "description": "選擇的分析師列表，空陣列表示使用全部 14 位分析師",
             "items": {
               "type": "string",
               "enum": [
@@ -149,115 +195,84 @@
                 "valuation_analyst"
               ]
             },
-            "example": ["warren_buffett", "peter_lynch"]
+            "example": ["warren_buffett", "cathie_wood", "michael_burry", "wsb"]
           },
           "modelName": {
             "type": "string",
-            "description": "使用的 LLM 模型",
-            "enum": ["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet-20241022", "gemini-2.0-flash", "llama3-70b-8192"],
+            "description": "使用的 LLM 模型名稱",
             "example": "gpt-4o"
+          },
+          "modelProvider": {
+            "type": "string",
+            "description": "模型供應商（OpenAI, Anthropic, Gemini, DeepSeek, Groq 等，預設自動推斷）",
+            "example": "OpenAI"
+          },
+          "enableRoundTable": {
+            "type": "boolean",
+            "description": "是否在分析師分析後啟用多輪圓桌會議辯論",
+            "default": false,
+            "example": true
+          },
+          "roundTableRounds": {
+            "type": "integer",
+            "description": "圓桌會議辯論輪數（建議 2 或 3）",
+            "default": 2,
+            "example": 2
           },
           "initialCash": {
             "type": "number",
-            "description": "初始現金（預設：100000）",
+            "description": "初始資金（預設：100000）",
             "default": 100000,
             "example": 100000
           },
           "startDate": {
             "type": "string",
             "format": "date",
-            "description": "分析起始日期（預設：結束日期前 3 個月）",
-            "example": "2024-09-01"
+            "description": "分析起始日期（YYYY-MM-DD）"
           },
           "endDate": {
             "type": "string",
             "format": "date",
-            "description": "分析結束日期（預設：今天）",
-            "example": "2024-12-01"
+            "description": "分析結束日期（YYYY-MM-DD）"
+          }
+        }
+      },
+      "RoundTableRequest": {
+        "type": "object",
+        "required": ["tickers"],
+        "properties": {
+          "tickers": {
+            "type": "string",
+            "description": "標的代號"
+          },
+          "analystSignals": {
+            "type": "object",
+            "description": "各分析師預先計算之訊號"
+          },
+          "modelName": {
+            "type": "string",
+            "default": "gpt-4o"
+          },
+          "numRounds": {
+            "type": "integer",
+            "default": 2
           }
         }
       },
       "AnalysisResponse": {
         "type": "object",
         "properties": {
-          "analyst_signals": {
-            "type": "object",
-            "description": "各分析師的分析結果，按分析師和股票代碼分組",
-            "example": {
-              "warren_buffett_agent": {
-                "TSLA": {
-                  "signal": "bearish",
-                  "confidence": 85.0,
-                  "reasoning": "基於價值投資原則分析..."
-                }
-              },
-              "risk_management_agent": {
-                "TSLA": {
-                  "current_price": 430.17,
-                  "remaining_position_limit": 50000.0,
-                  "reasoning": {
-                    "available_cash": 100000.0,
-                    "position_limit_pct": "50%"
-                  }
-                }
-              }
-            }
-          },
           "decisions": {
             "type": "object",
-            "description": "最終投資決策，按股票代碼分組",
-            "example": {
-              "TSLA": {
-                "action": "short",
-                "quantity": 46,
-                "confidence": 85.0,
-                "reasoning": "多數分析師看空..."
-              }
-            }
-          }
-        }
-      },
-      "AnalystSignal": {
-        "type": "object",
-        "properties": {
-          "signal": {
-            "type": "string",
-            "enum": ["bullish", "bearish", "neutral"],
-            "description": "投資信號"
+            "description": "最終投資組合決策"
           },
-          "confidence": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 100,
-            "description": "信心度百分比"
+          "analyst_signals": {
+            "type": "object",
+            "description": "各分析師的獨立分析訊號"
           },
-          "reasoning": {
-            "type": "string",
-            "description": "分析理由"
-          }
-        }
-      },
-      "Decision": {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string",
-            "enum": ["buy", "sell", "short", "cover", "hold"],
-            "description": "投資動作"
-          },
-          "quantity": {
-            "type": "integer",
-            "description": "交易數量（股數）"
-          },
-          "confidence": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 100,
-            "description": "決策信心度"
-          },
-          "reasoning": {
-            "type": "string",
-            "description": "決策理由"
+          "round_table": {
+            "type": "object",
+            "description": "多輪圓桌會議辯論與共識結論"
           }
         }
       },
@@ -279,7 +294,11 @@
   "tags": [
     {
       "name": "Analysis",
-      "description": "股票分析相關 API"
+      "description": "股票分析與決策 API"
+    },
+    {
+      "name": "Round Table",
+      "description": "多輪圓桌會議辯論 API"
     },
     {
       "name": "Health",
