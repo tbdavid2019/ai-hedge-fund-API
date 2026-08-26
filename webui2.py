@@ -6,6 +6,9 @@ import json
 import threading
 import traceback
 import requests
+import math
+import numpy as np
+import pandas as pd
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from flask_sock import Sock
@@ -31,6 +34,34 @@ sock = Sock(app)
 
 # WebSocket 客戶端列表
 websocket_clients = []
+
+
+def sanitize_json_output(obj):
+    """
+    Recursively replaces NaN, Infinity, and -Infinity with None so that
+    Flask output conforms to strict standard JSON (RFC 8259), preventing
+    Node.js JSON.parse() SyntaxError: Unexpected token 'N' (NaN is not valid JSON).
+    """
+    if obj is None:
+        return None
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    elif isinstance(obj, (np.floating, np.integer)):
+        f = float(obj)
+        if math.isnan(f) or math.isinf(f):
+            return None
+        return f
+    elif isinstance(obj, dict):
+        return {k: sanitize_json_output(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [sanitize_json_output(item) for item in obj]
+    elif isinstance(obj, (np.ndarray, pd.Series)):
+        return [sanitize_json_output(x) for x in obj.tolist()]
+    elif isinstance(obj, pd.DataFrame):
+        return [sanitize_json_output(row) for row in obj.to_dict("records")]
+    return obj
 
 
 def infer_model_provider(model_name: str, specified_provider: str = None) -> str:
@@ -295,7 +326,7 @@ def run_analysis():
         # 發送 Discord 通知
         send_discord_notification(ticker_list, result, end_date)
         
-        return jsonify(result)
+        return jsonify(sanitize_json_output(result))
 
     except Exception as e:
         error_message = f"API Error: {str(e)}"
@@ -335,7 +366,7 @@ def run_round_table_endpoint():
         )
 
         broadcast_log("Round table debate completed successfully", "success")
-        return jsonify({"round_table": rt_results})
+        return jsonify(sanitize_json_output({"round_table": rt_results}))
 
     except Exception as e:
         error_message = f"Round Table API Error: {str(e)}"

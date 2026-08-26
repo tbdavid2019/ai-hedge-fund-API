@@ -4,6 +4,16 @@
 
 ---
 
+## 🚀 [v2.0.1] - 2026-08-26
+
+### 🛡️ 1. 修復技術指標 NaN 導致 Node.js JSON.parse 解析失敗問題 (RFC 8259 嚴格相容)
+- **問題根因修復**：修復了當歷史價格區間較短（如預設 3 個月）時，6 個月動能指標 `momentum_6m` 與長週期波動率計算產出 Python `NaN`，在 JSON 序列化中輸出非標準 `NaN` 字符，導致 Node.js / 前端 Next.js (`route.ts`) 執行 `JSON.parse()` 時拋出 `SyntaxError: Unexpected token 'N', ... NaN is not valid JSON` 的嚴重問題。
+- **技術指標滾動計算強化**：在 [src/agents/technicals.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/technicals.py) 加入 `min_periods=1` 與 `safe_float` 容錯轉換，確保在任何歷史長度下皆能產出合法數值。
+- **全局 JSON 淨化攔截**：在 [webui2.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/webui2.py) 實作 `sanitize_json_output` 遞迴過濾器，保證所有 API 回傳數據（`/api/analysis`、`/api/round_table`）中的 `NaN`、`Infinity` 與 `-Infinity` 一律安全轉換為標準 JSON `null` 或合法浮點數。
+- **更新 API Skill 規範**：在 [skill.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/skill.md) 與 `static/skill.md` 清楚載明 RFC 8259 JSON 嚴格相容性保證與 Node.js / TypeScript 安全指南。
+
+---
+
 ## 🚀 [v2.0.0] - 2026-08-26
 
 ### 🌐 1. 導入 2md 即時搜尋與社群風向抓取

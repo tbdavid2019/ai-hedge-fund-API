@@ -177,3 +177,11 @@ Run an investment committee debate with pre-computed analyst signals.
    - Select `["warren_buffett", "ben_graham", "charlie_munger", "fundamentals_analyst"]`.
 4. **For Non-US Stocks** (e.g. Taiwan `2330.TW`, Hong Kong `0001.HK`):
    - The system automatically normalizes ticker suffixes and leverages 2md search for global news and sentiment.
+
+---
+
+## 🛡️ JSON Compliance & Strict Parsing Guarantees (RFC 8259)
+
+- **Zero `NaN` / `Infinity` Guarantee**: All numerical metrics across all 14 analysts (e.g. `momentum_6m`, `historical_volatility`, `volatility_z_score`, `z_score`, `atr_ratio`, `dcf_value`, etc.) are strictly sanitized to standard JSON floats or `null`.
+- **Node.js & TypeScript 100% Safe**: Never triggers `SyntaxError: Unexpected token 'N' (NaN is not valid JSON)` when executing `JSON.parse()` in Node.js, Next.js API routes (`route.ts`), Python, Go, or browser clients.
+- **Graceful Insufficient Data Handling**: When historical price days are shorter than rolling indicator windows (e.g. calculating 6-month momentum on a 3-month timeframe), indicators automatically use `min_periods=1` and fallback to valid numbers or `null`.
