@@ -15,6 +15,8 @@ from flask_sock import Sock
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
+import uuid
+import time
 
 from src.main import run_hedge_fund
 from src.agents.round_table import round_table
@@ -271,9 +273,93 @@ def swagger_ui():
 '''
 
 
+# ==========================================
+# 異步任務管理與快取系統 (Async Task Store)
+# ==========================================
+analysis_tasks = {}
+analysis_tasks_lock = threading.Lock()
+
+def cleanup_old_tasks():
+    """清理超過 2 小時的舊任務"""
+    with analysis_tasks_lock:
+        now = time.time()
+        expired = [
+            tid for tid, tinfo in analysis_tasks.items()
+            if now - tinfo.get("created_timestamp", now) > 7200
+        ]
+        for tid in expired:
+            del analysis_tasks[tid]
+
+def execute_async_analysis_task(
+    task_id: str,
+    ticker_list: list,
+    start_date: str,
+    end_date: str,
+    portfolio: dict,
+    selected_analysts: list,
+    model_name: str,
+    model_provider: str,
+    is_crypto: bool,
+    enable_round_table: bool,
+    round_table_rounds: int
+):
+    """背景執行 AI 投資分析任務"""
+    try:
+        with analysis_tasks_lock:
+            if task_id in analysis_tasks:
+                analysis_tasks[task_id]["status"] = "processing"
+                analysis_tasks[task_id]["progress"] = f"正在執行 {', '.join(ticker_list)} 大師量化分析與數據審計..."
+                analysis_tasks[task_id]["updated_at"] = datetime.utcnow().isoformat() + "Z"
+
+        broadcast_log(f"Async task {task_id} started for {ticker_list}", "info")
+
+        result = run_hedge_fund(
+            tickers=ticker_list,
+            start_date=start_date,
+            end_date=end_date,
+            portfolio=portfolio,
+            show_reasoning=True,
+            selected_analysts=selected_analysts,
+            model_name=model_name,
+            model_provider=model_provider,
+            is_crypto=is_crypto,
+            enable_round_table=enable_round_table,
+            round_table_rounds=round_table_rounds
+        )
+
+        sanitized_result = sanitize_json_output(result)
+
+        # 發送 Discord 通知
+        send_discord_notification(ticker_list, result, end_date)
+
+        with analysis_tasks_lock:
+            if task_id in analysis_tasks:
+                analysis_tasks[task_id]["status"] = "completed"
+                analysis_tasks[task_id]["progress"] = "分析與圓桌會議已全部完成"
+                analysis_tasks[task_id]["result"] = sanitized_result
+                analysis_tasks[task_id]["completed_at"] = datetime.utcnow().isoformat() + "Z"
+                analysis_tasks[task_id]["updated_at"] = datetime.utcnow().isoformat() + "Z"
+
+        broadcast_log(f"Async task {task_id} completed successfully", "success")
+
+    except Exception as e:
+        error_msg = str(e)
+        trace = traceback.format_exc()
+        broadcast_log(f"Async task {task_id} failed: {error_msg}", "error")
+
+        with analysis_tasks_lock:
+            if task_id in analysis_tasks:
+                analysis_tasks[task_id]["status"] = "failed"
+                analysis_tasks[task_id]["progress"] = f"分析失敗: {error_msg}"
+                analysis_tasks[task_id]["error"] = error_msg
+                analysis_tasks[task_id]["traceback"] = trace
+                analysis_tasks[task_id]["updated_at"] = datetime.utcnow().isoformat() + "Z"
+
+
+@app.route('/api/analysis/async', methods=['POST'])
 @app.route('/api/analysis', methods=['POST'])
 def run_analysis():
-    """執行對股票的多維度分析與可選的圓桌會議"""
+    """執行對股票的多維度分析（支援同步阻塞或異步任務模式）"""
     try:
         data = request.get_json() or {}
         raw_tickers = data.get('tickers', '')
@@ -291,6 +377,9 @@ def run_analysis():
         enable_round_table = bool(data.get('enableRoundTable', False) or data.get('enable_round_table', False))
         round_table_rounds = int(data.get('roundTableRounds', 2) or data.get('round_table_rounds', 2))
         is_crypto = bool(data.get('isCrypto', False) or data.get('is_crypto', False))
+        
+        # 判斷是否為異步請求 (端點為 /api/analysis/async 或 payload 中包含 async: true)
+        is_async = request.path.endswith('/async') or bool(data.get('async', False) or data.get('isAsync', False))
 
         # 設定開始與結束時間
         end_date = data.get('endDate') or datetime.now().strftime('%Y-%m-%d')
@@ -304,6 +393,56 @@ def run_analysis():
             "realized_gains": {ticker: {"long": 0.0, "short": 0.0} for ticker in ticker_list}
         }
 
+        # 異步非阻塞模式
+        if is_async:
+            cleanup_old_tasks()
+            task_id = str(uuid.uuid4())
+            now_iso = datetime.utcnow().isoformat() + "Z"
+
+            with analysis_tasks_lock:
+                analysis_tasks[task_id] = {
+                    "taskId": task_id,
+                    "task_id": task_id,
+                    "status": "pending",
+                    "progress": "任務已建立，排隊進行中...",
+                    "tickers": ticker_list,
+                    "created_at": now_iso,
+                    "created_timestamp": time.time(),
+                    "updated_at": now_iso,
+                    "result": None,
+                    "error": None
+                }
+
+            # 啟動背景工作線程
+            worker_thread = threading.Thread(
+                target=execute_async_analysis_task,
+                args=(
+                    task_id,
+                    ticker_list,
+                    start_date,
+                    end_date,
+                    portfolio,
+                    selected_analysts,
+                    model_name,
+                    model_provider,
+                    is_crypto,
+                    enable_round_table,
+                    round_table_rounds
+                ),
+                daemon=True
+            )
+            worker_thread.start()
+
+            return jsonify({
+                "taskId": task_id,
+                "task_id": task_id,
+                "status": "pending",
+                "message": "AI 分析任務已在背景建立，請透過 /api/task/<taskId> 查詢進度與結果",
+                "pollUrl": f"/api/task/{task_id}",
+                "tickers": ticker_list
+            }), 202
+
+        # 同步阻塞模式 (保留向後相容)
         broadcast_log(f"Starting analysis for {ticker_list} (RoundTable={enable_round_table}, Model={model_name})", "info")
 
         # 執行完整分析
@@ -332,6 +471,23 @@ def run_analysis():
         error_message = f"API Error: {str(e)}"
         broadcast_log(error_message, "error")
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+
+@app.route('/api/task/<task_id>', methods=['GET'])
+@app.route('/api/analysis/status/<task_id>', methods=['GET'])
+def get_task_status(task_id):
+    """查詢異步任務執行狀態與結果"""
+    with analysis_tasks_lock:
+        task_info = analysis_tasks.get(task_id)
+
+    if not task_info:
+        return jsonify({
+            "error": "找不到該任務或任務已過期",
+            "taskId": task_id,
+            "status": "not_found"
+        }), 404
+
+    return jsonify(task_info)
 
 
 @app.route('/api/round_table', methods=['POST'])
