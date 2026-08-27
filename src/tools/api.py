@@ -124,23 +124,32 @@ def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = Fa
         yf_ticker = yf.Ticker(yf_ticker_str)
         df = yf_ticker.history(start=start_date, end=end_date)
         
-        if not df.empty:
+        if df is not None and not df.empty:
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            elif len(df.columns) > 0 and isinstance(df.columns[0], tuple):
+                df.columns = [i[0] for i in df.columns]
+                
             prices = []
             for index, row in df.iterrows():
                 date_str = index.strftime('%Y-%m-%d')
-                price = Price(
-                    open=float(row['Open']),
-                    close=float(row['Close']),
-                    high=float(row['High']),
-                    low=float(row['Low']),
-                    volume=int(row['Volume']),
-                    time=date_str
-                )
-                prices.append(price)
+                try:
+                    price = Price(
+                        open=float(row['Open']),
+                        close=float(row['Close']),
+                        high=float(row['High']),
+                        low=float(row['Low']),
+                        volume=int(row['Volume']),
+                        time=date_str
+                    )
+                    prices.append(price)
+                except Exception:
+                    continue
             
-            # Cache the results
-            _cache.set_prices(cache_key, [p.model_dump() for p in prices])
-            return prices
+            if prices:
+                # Cache the results
+                _cache.set_prices(cache_key, [p.model_dump() for p in prices])
+                return prices
     except Exception as e:
         print(f"Yahoo Finance error for {ticker}: {str(e)}")
     
@@ -1115,7 +1124,7 @@ def get_company_news(
     limit: int = 100,
     is_crypto: bool = False
 ) -> list[CompanyNews]:
-    """Fetch news articles for a ticker with sentiment analysis and 2md fallback."""
+    """Fetch news articles for a ticker prioritizing 2MD SERP Search with yfinance fallback and sentiment analysis."""
     if is_crypto:
         return get_crypto_news(ticker, end_date, start_date, limit)
     
@@ -1123,7 +1132,6 @@ def get_company_news(
     
     # Check cache first
     if cached_data := _cache.get_company_news(ticker):
-        # Filter cached data by date range
         filtered_data = [CompanyNews(**news) for news in cached_data 
                         if (start_date is None or news["date"] >= start_date)
                         and news["date"] <= end_date]
@@ -1132,68 +1140,101 @@ def get_company_news(
             return filtered_data
 
     news_items = []
+    seen_urls = set()
 
-    # 1. Fetch from Yahoo Finance
+    # 1. Priority 1: High-Speed 2MD Financial SERP Search (Primary: 2md.aiurl.tw, Backups: 2md.glsoft.ai, create360.ai)
     try:
-        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-        start_dt = datetime.strptime(start_date, '%Y-%m-%d') if start_date else end_dt - timedelta(days=90)
-        
-        yf_ticker = yf.Ticker(yf_ticker_str)
-        news_data = yf_ticker.news or []
-        
-        for news in news_data:
-            timestamp = news.get('providerPublishTime', 0)
-            news_date = datetime.fromtimestamp(timestamp) if timestamp else datetime.now()
-            date_str = news_date.strftime('%Y-%m-%d')
+        from tools.url2md import search_web_2md
+        if ".TW" in ticker.upper() or ".TWO" in ticker.upper() or ticker.isdigit():
+            query = f"{ticker} 台灣 股票 財經 新聞"
+        elif ".HK" in ticker.upper():
+            query = f"{ticker} 港股 財經 新聞"
+        else:
+            query = f"{ticker} stock financial news analysis"
             
-            if news_date < start_dt or news_date > end_dt:
+        search_results = search_web_2md(query, limit=limit)
+        for item in search_results:
+            title = item.get("title", "").strip()
+            desc = item.get("description", "").strip()
+            url = item.get("url", "").strip()
+            
+            if not title or not url or url in seen_urls:
                 continue
-                
-            title = news.get('title', '')
-            publisher = news.get('publisher', '')
-            sentiment = _classify_sentiment_text(title)
+            seen_urls.add(url)
+            
+            full_text = f"{title} {desc}"
+            sentiment = _classify_sentiment_text(full_text)
             
             news_item = CompanyNews(
                 ticker=ticker,
                 title=title,
-                author=publisher,
-                source=publisher or "Yahoo Finance",
-                date=date_str,
-                url=news.get('link', ''),
+                author=item.get("publisher") or "2MD Search",
+                source="2MD Web",
+                date=end_date,
+                url=url,
                 sentiment=sentiment
             )
             news_items.append(news_item)
             if len(news_items) >= limit:
                 break
     except Exception as e:
-        print(f"Yahoo Finance news error for {ticker}: {str(e)}")
+        print(f"2MD news search error for {ticker}: {str(e)}")
 
-    # 2. Fallback / supplementary search via 2md service if news is sparse
-    if len(news_items) < 5:
+    # 2. Priority 2: Yahoo Finance News with Modern Content Dict Support
+    if len(news_items) < limit:
         try:
-            from tools.url2md import search_web_2md
-            query = f"{ticker} stock news {end_date[:4]}"
-            search_results = search_web_2md(query, limit=limit - len(news_items))
-            for item in search_results:
-                title = item.get("title", "")
-                desc = item.get("description", "")
-                full_text = f"{title} {desc}"
-                sentiment = _classify_sentiment_text(full_text)
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d') if start_date else end_dt - timedelta(days=90)
+            
+            yf_ticker = yf.Ticker(yf_ticker_str)
+            news_data = yf_ticker.news or []
+            
+            for news in news_data:
+                title = "Title Unavailable"
+                link = f"https://finance.yahoo.com/quote/{ticker}"
+                publisher = "Yahoo Finance"
+                published_ts = 0
+
+                # Support both modern content dict and legacy flat dict
+                if 'content' in news and isinstance(news['content'], dict):
+                    c = news['content']
+                    title = c.get('title', title)
+                    if 'clickThroughUrl' in c and isinstance(c['clickThroughUrl'], dict) and 'url' in c['clickThroughUrl']:
+                        link = c['clickThroughUrl']['url']
+                    elif 'canonicalUrl' in c and isinstance(c['canonicalUrl'], dict) and 'url' in c['canonicalUrl']:
+                        link = c['canonicalUrl']['url']
+                    elif 'url' in c:
+                        link = c['url']
+                    publisher = news.get('publisher', publisher)
+                    published_ts = news.get('providerPublishTime', 0)
+                else:
+                    title = news.get('title', title)
+                    link = news.get('link', link)
+                    publisher = news.get('publisher', publisher)
+                    published_ts = news.get('providerPublishTime', 0)
+
+                news_date = datetime.fromtimestamp(published_ts) if published_ts else datetime.now()
+                date_str = news_date.strftime('%Y-%m-%d')
                 
+                if (published_ts and (news_date < start_dt or news_date > end_dt)) or link in seen_urls:
+                    continue
+                seen_urls.add(link)
+                
+                sentiment = _classify_sentiment_text(title)
                 news_item = CompanyNews(
                     ticker=ticker,
                     title=title,
-                    author="2md Search",
-                    source="Web",
-                    date=end_date,
-                    url=item.get("url", ""),
+                    author=publisher,
+                    source=publisher or "Yahoo Finance",
+                    date=date_str,
+                    url=link,
                     sentiment=sentiment
                 )
                 news_items.append(news_item)
                 if len(news_items) >= limit:
                     break
         except Exception as e:
-            print(f"2md news search fallback error for {ticker}: {str(e)}")
+            print(f"Yahoo Finance news error for {ticker}: {str(e)}")
 
     # Sort by date, newest first
     news_items.sort(key=lambda x: x.date, reverse=True)
