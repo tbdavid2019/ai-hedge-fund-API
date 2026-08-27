@@ -4,6 +4,15 @@
 
 ---
 
+## 🚀 [v2.0.3] - 2026-08-27
+
+### 🌐 1. 優先採用 2MD SERP 高速金融新聞搜尋與修復 yfinance 結構解析
+- **2MD SERP 新聞優先化**：在 [src/tools/api.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/tools/api.py) 中，將 2MD 即時搜尋 (`2md.aiurl.tw` / `2md.glsoft.ai` / `create360.ai`) 列為第一優先新聞源，並針對台股（`2330.TW`、`*.TWO`）、港股（`*.HK`）與美股動態自適應搜尋關鍵字（例如 `{ticker} 台灣 股票 財經 新聞`），大幅提升非美股新聞涵蓋度與時效性。
+- **修復現代 yfinance 新聞結構解析**：全面支援新版 yfinance 回傳之巢狀 `content` 物件（解析 `clickThroughUrl`、`canonicalUrl` 等新欄位），並向下相容舊版扁平結構，徹底修復過去 yfinance 新聞標題與連結遺失問題。
+- **歷史價格解析容錯強化**：在 Yahoo Finance 歷史 K 線解析中加入單列異常跳過邏輯，防止單一損毀數據中斷整體歷史股價序列。
+
+---
+
 ## 🚀 [v2.0.2] - 2026-08-26
 
 ### 🌐 1. 全面支援英文與繁體中文雙語輸出 (Bilingual Reasoning & Debates)
