@@ -154,9 +154,10 @@ python webui2.py
 # Build image
 docker build --network=host -t ai-hedge-fund-api .
 
-# Run / restart container with volume mount for hot reloading
+# Run / restart container with volume mount for hot reloading and Watchtower label
 docker stop nice_jemison && docker rm nice_jemison
 docker run -d --name nice_jemison \
+  --label "com.centurylinklabs.watchtower.enable=true" \
   --env-file .env \
   -v $(pwd)/src:/app/src \
   -v $(pwd)/webui2.py:/app/webui2.py \
@@ -164,6 +165,24 @@ docker run -d --name nice_jemison \
   --restart always \
   -p 6000:6000 \
   ai-hedge-fund-api
+
+# Or use docker-compose to launch both API and Watchtower daemon
+docker compose up -d
+```
+
+### 🗼 Watchtower & yfinance Automated Maintenance
+```bash
+# Start Watchtower daemon (monitors labelled containers and updates automatically)
+./scripts/start_watchtower.sh
+
+# Check if yfinance has an update on PyPI and automatically rebuild Docker container
+./scripts/auto_rebuild_yfinance.sh
+
+# Force rebuild container regardless of version
+./scripts/auto_rebuild_yfinance.sh --force
+
+# Check yfinance version only without rebuilding
+./scripts/auto_rebuild_yfinance.sh --check
 ```
 
 ### Test API Endpoints

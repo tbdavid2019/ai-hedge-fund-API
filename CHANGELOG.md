@@ -4,6 +4,20 @@
 
 ---
 
+## 🚀 [v2.1.0] - 2026-08-27
+
+### 🗼 1. 導入 Watchtower 自動化維運與 yfinance 自主檢測重建機制
+- **整合 Watchtower 自動發布守護進程**：
+  - 導入輕量級 (15MB) Golang 運維工具 [Watchtower](https://containrrr.dev/watchtower/)（`containrrr/watchtower`），透過標籤 `com.centurylinklabs.watchtower.enable=true` 實現無人值守自動熱更新。
+  - 新增 [scripts/start_watchtower.sh](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/scripts/start_watchtower.sh) 提供一鍵啟動腳本。
+  - 新增 [docker-compose.yml](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/docker-compose.yml) 支援 API 服務與 Watchtower 雙容器標準編排。
+- **yfinance PyPI 版本自主檢測與自動 Docker 重建**：
+  - 新增 [scripts/check_and_update_yfinance.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/scripts/check_and_update_yfinance.py)：自動對比容器內部與 PyPI 上最新的 `yfinance` 版本。
+  - 新增 [scripts/auto_rebuild_yfinance.sh](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/scripts/auto_rebuild_yfinance.sh)：當 PyPI 推出新版 `yfinance` 時，自動觸發 Docker 映像重構、重啟容器並執行 `/api/health` 與 Ticker 功能校驗，可無縫加入 Crontab 定時排程。
+- **文檔與指令更新**：在 [README.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/README.md) 與 [AGENTS.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/AGENTS.md) 完整記錄 Watchtower 與自動維護指令。
+
+---
+
 ## 🚀 [v2.0.3] - 2026-08-27
 
 ### 🌐 1. 優先採用 2MD SERP 高速金融新聞搜尋與修復 yfinance 結構解析

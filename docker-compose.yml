@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  ai-hedge-fund-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-hedge-fund-api:latest
+    container_name: nice_jemison
+    restart: always
+    ports:
+      - "6000:6000"
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+      - ./webui2.py:/app/webui2.py
+      - ./static:/app/static
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    networks:
+      - hedge-fund-net
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+    networks:
+      - hedge-fund-net
+
+networks:
+  hedge-fund-net:
+    driver: bridge

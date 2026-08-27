@@ -104,13 +104,54 @@ DISCORD_WEBHOOK_URL=
 ### **4️⃣ 啟動服務**
 
 ```bash
-# 本地直接啟動
+# 方式 A：本地直接啟動
 python webui2.py
 
-# 或使用 Docker 容器啟動
-docker build -t ai-hedge-fund-api .
-docker run -d --name ai-hedge-fund-api --env-file .env --restart always -p 6000:6000 ai-hedge-fund-api
+# 方式 B：使用 Docker 容器啟動（附帶 Watchtower 標籤）
+docker build --network=host -t ai-hedge-fund-api .
+docker run -d --name nice_jemison \
+  --label "com.centurylinklabs.watchtower.enable=true" \
+  --env-file .env \
+  -v $(pwd)/src:/app/src \
+  -v $(pwd)/webui2.py:/app/webui2.py \
+  -v $(pwd)/static:/app/static \
+  --restart always \
+  -p 6000:6000 \
+  ai-hedge-fund-api
+
+# 方式 C：使用 Docker Compose 一鍵啟動 API + Watchtower 自動更新守護進程
+docker compose up -d
 ```
+
+---
+
+## 🗼 Watchtower 自動化運維與 yfinance 自主重構
+
+本專案支援 **[Watchtower](https://containrrr.dev/watchtower/)** 輕量級 (15MB) 自動化發布與依賴版本自主監控機制：
+
+### 1. 啟動 Watchtower 守護進程
+```bash
+# 啟動 Watchtower 自動監控帶有標籤的容器並自動更新熱重啟
+./scripts/start_watchtower.sh
+```
+
+### 2. yfinance 自動版本檢查與自主 Docker 重建
+由於 Yahoo Finance 介面經常變更，本專案提供自主檢測腳本，可自動查詢 PyPI 上是否有最新 `yfinance` 版本，並自動重構 Docker 容器：
+```bash
+# 檢查 PyPI 版本，若有新版則自動升級、重構映像並重啟容器
+./scripts/auto_rebuild_yfinance.sh
+
+# 僅檢查版本狀態
+./scripts/auto_rebuild_yfinance.sh --check
+
+# 強制重建 Docker 容器與依賴
+./scripts/auto_rebuild_yfinance.sh --force
+```
+
+> 💡 **自動化定時任務 (Crontab)**：可在主機設定每日自動檢查（例如每天凌晨 3 點）：
+> ```bash
+> 0 3 * * * /home/ubuntu/ai-hedge-fund-API/scripts/auto_rebuild_yfinance.sh >> /home/ubuntu/ai-hedge-fund-API/logs/cron_yfinance.log 2>&1
+> ```
 
 ---
 
