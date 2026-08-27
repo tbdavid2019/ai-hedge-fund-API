@@ -88,15 +88,21 @@ if [ ${UPDATE_STATUS} -eq 10 ] || [ "${FORCE_REBUILD}" = true ]; then
         "${IMAGE_NAME}"
 
     log "⏳ Waiting for service to initialize..."
-    sleep 3
+    HEALTH_OK=false
+    HEALTH_RESP="FAILED"
+    for i in $(seq 1 10); do
+        sleep 2
+        HEALTH_RESP=$(curl -s "http://localhost:${PORT}/api/health" || echo "FAILED")
+        if [[ "${HEALTH_RESP}" == *"healthy"* ]]; then
+            HEALTH_OK=true
+            log "✅ Health check PASSED on attempt ${i}: ${HEALTH_RESP}"
+            break
+        fi
+        log "⏳ Health check attempt ${i}/10 pending..."
+    done
 
-    # 3. Health Check
-    log "💓 Performing health check on http://localhost:${PORT}/api/health..."
-    HEALTH_RESP=$(curl -s "http://localhost:${PORT}/api/health" || echo "FAILED")
-    if [[ "${HEALTH_RESP}" == *"healthy"* ]]; then
-        log "✅ Health check PASSED: ${HEALTH_RESP}"
-    else
-        log "❌ Health check FAILED: ${HEALTH_RESP}"
+    if [ "${HEALTH_OK}" != true ]; then
+        log "❌ Health check FAILED after retries: ${HEALTH_RESP}"
         exit 1
     fi
 

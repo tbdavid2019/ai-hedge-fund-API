@@ -22,6 +22,7 @@ docker run -d \
     --name "${WATCHTOWER_CONTAINER}" \
     --restart always \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -e DOCKER_API_VERSION=1.45 \
     -e WATCHTOWER_CLEANUP=true \
     -e WATCHTOWER_POLL_INTERVAL="${POLL_INTERVAL}" \
     -e WATCHTOWER_LABEL_ENABLE=true \
