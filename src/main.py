@@ -52,7 +52,7 @@ def run_hedge_fund(
     portfolio: dict,
     show_reasoning: bool = False,
     selected_analysts: list[str] = [],
-    model_name: str = "openai/gpt-oss-120b",
+    model_name: str = "openai/gpt-oss-20b",
     model_provider: str = "Groq",
     is_crypto: bool = False,
     enable_round_table: bool = False,

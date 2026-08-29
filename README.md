@@ -41,7 +41,7 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 
 - 🏛️ **多輪投資圓桌會議 (Multi-Round Round Table)**：讓 14 位投資大師進行多輪攻防辯論（開場 ➔ 質疑 ➔ 達成委員會共識）。
 - 🌐 **整合 2md 系列即時搜尋**：透過 `2md.aiurl.tw` / `2md.glsoft.ai` / `create360.ai` 即時獲取全球即時新聞與社群風向，徹底解決非美股與新聞時效問題。
-- 🤖 **主要與雙層備援 LLM 機制**：預設採用 Groq 超高速推理模型 (`openai/gpt-oss-120b`)，自動配合 Google Gemini (`models/gemini-flash-latest`) 進行無縫容錯降級，前端與呼叫端完全無需感知或指定底層 LLM。
+- 🤖 **主要與雙層備援 LLM 機制**：預設採用 Groq 超高速推理模型 (`openai/gpt-oss-20b`)，自動配合 Google Gemini (`models/gemini-flash-latest`) 進行無縫容錯降級，前端與呼叫端完全無需感知或指定底層 LLM。
 - 📈 **社群風向與散戶情緒**：WSB Agent 整合即時社群動能與選擇權軋空潛力評估。
 - 📦 **Docker 一鍵部署**：內建 Flask API 與 Swagger UI，支援 WebSocket 即時日誌廣播與 Discord Webhook 報告推送。
 
@@ -75,7 +75,7 @@ pip install -r requirements.txt
 ### **3️⃣ 設定環境變數 (`.env`)**
 ```ini
 # LLM 預設設定
-DEFAULT_MODEL=openai/gpt-oss-120b
+DEFAULT_MODEL=openai/gpt-oss-20b
 DEFAULT_MODEL_PROVIDER=Groq
 
 # Groq API 金鑰 (Primary)

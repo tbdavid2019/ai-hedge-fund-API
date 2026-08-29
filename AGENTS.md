@@ -94,7 +94,7 @@ All LLM calls in the codebase MUST be resilient against upstream provider outage
 
 1. **Primary Model**:
    - Provider: `Groq`
-   - Model: `openai/gpt-oss-120b` (or `openai/gpt-oss-20b`)
+   - Model: `openai/gpt-oss-20b` (or `openai/gpt-oss-120b`)
    - Key: `GROQ_API_KEY`
 2. **Automatic Failover Model**:
    - Provider: `Gemini`

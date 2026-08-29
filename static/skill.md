@@ -11,7 +11,7 @@ This document is designed for AI Agents and LLMs to understand and interact with
 - **API Documentation**: `http://localhost:6000/docs`
 - **Health Check**: `http://localhost:6000/api/health`
 - **Swagger JSON**: `http://localhost:6000/static/swagger.json`
-- **Default LLM Engine**: Groq (`openai/gpt-oss-120b`) managed automatically by backend with resilient Gemini failover.
+- **Default LLM Engine**: Groq (`openai/gpt-oss-20b`) managed automatically by backend with resilient Gemini failover.
 
 ---
 

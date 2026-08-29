@@ -4,6 +4,16 @@
 
 ---
 
+## 🚀 [v2.2.2] - 2026-08-29
+
+### ⚡ 1. 預設主力模型優化為 Groq 極速輕量旗艦 `openai/gpt-oss-20b`
+- **極速與低延遲推論**：將全系統預設主力模型設為 `openai/gpt-oss-20b`（兼顧超高並發吞吐量、低延遲與穩定性，並支援 `openai/gpt-oss-120b`）。
+- **同步更新全局配置**：
+  - 更新 [src/llm/models.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/llm/models.py)、[src/utils/llm.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/utils/llm.py)、[webui2.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/webui2.py)、[src/main.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/main.py)。
+  - 同步更新 [skill.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/skill.md)、[README.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/README.md) 與 [AGENTS.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/AGENTS.md)。
+
+---
+
 ## 🚀 [v2.2.1] - 2026-08-29
 
 ### 🐛 1. 修復 yfinance 尾列 NaN 導致市場價格無效 (NaN) 與無法下單 (Hold 0股) 之重大 Bug

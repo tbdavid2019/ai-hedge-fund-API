@@ -36,13 +36,13 @@ class LLMModel(BaseModel):
 AVAILABLE_MODELS = [
     # Primary default model (Groq)
     LLMModel(
-        display_name="[groq] openai/gpt-oss-120b (Primary Default)",
-        model_name="openai/gpt-oss-120b",
+        display_name="[groq] openai/gpt-oss-20b (Primary Default)",
+        model_name="openai/gpt-oss-20b",
         provider=ModelProvider.GROQ
     ),
     LLMModel(
-        display_name="[groq] openai/gpt-oss-20b",
-        model_name="openai/gpt-oss-20b",
+        display_name="[groq] openai/gpt-oss-120b",
+        model_name="openai/gpt-oss-120b",
         provider=ModelProvider.GROQ
     ),
 
@@ -142,12 +142,12 @@ def get_model_info(model_name: str) -> Optional[LLMModel]:
 def get_model(model_name: str = None, model_provider: ModelProvider = None) -> Any:
     """
     Instantiate Chat LLM model.
-    Defaults to Primary Model (openai/gpt-oss-120b via Groq).
+    Defaults to Primary Model (openai/gpt-oss-20b via Groq).
     Fully backward-compatible: automatically normalizes legacy/obsolete model names.
     """
     # If model_name is missing, auto, or obsolete legacy string, use server primary default
     if not model_name or str(model_name).lower() in ["auto", "deepseek-v4-flash", "default", "none", ""]:
-        model_name = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-120b")
+        model_name = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-20b")
         model_provider = os.getenv("DEFAULT_MODEL_PROVIDER", ModelProvider.GROQ)
     
     # Auto-detect provider if model matches known signatures

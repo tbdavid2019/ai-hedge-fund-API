@@ -369,7 +369,7 @@ def run_analysis():
             ticker_list = [t.strip() for t in str(raw_tickers).split(',') if t.strip()]
             
         selected_analysts = data.get('selectedAnalysts', [])
-        default_model = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-120b")
+        default_model = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-20b")
         default_provider = os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
         model_name = data.get('modelName') or default_model
         model_provider = infer_model_provider(model_name, data.get('modelProvider') or default_provider)
@@ -502,7 +502,7 @@ def run_round_table_endpoint():
             ticker_list = [t.strip() for t in str(raw_tickers).split(',') if t.strip()]
             
         analyst_signals = data.get('analystSignals') or data.get('analyst_signals') or {}
-        default_model = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-120b")
+        default_model = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-20b")
         default_provider = os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
         model_name = data.get('modelName') or default_model
         model_provider = infer_model_provider(model_name, data.get('modelProvider') or default_provider)
