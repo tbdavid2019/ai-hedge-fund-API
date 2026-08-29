@@ -2,6 +2,11 @@
 
 This document is the authoritative **Developer & System Architecture Guide** for AI Coding Agents (such as Claude, Antigravity, Cursor, Devin, ChatGPT) working on or extending this repository.
 
+> 🛑 **【最高安全鐵律 · 絕對零容忍 (ZERO-TOLERANCE SECURITY IRON RULE)】**
+> 1. **嚴禁外洩或硬編碼任何真實 API Key**：絕對禁止在 Python 代碼 (`src/**/*.py`)、配置範例 (`.env.example`)、Markdown 文件 (`CHANGELOG.md`, `README.md`, `skill.md`, `AGENTS.md` 等) 或 Git Commit 訊息中寫入任何真實 API 金鑰。
+> 2. **唯一來源原則**：所有 Key 必須且只能存放於受 `.gitignore` 保護的 `.env` 中，代碼端一律使用 `os.getenv()` 讀取，缺省時只能報錯或留空，範例檔僅允許 `your_xxx_api_key_here` 佔位符。
+> 3. **嚴禁繞過安全攔截**：倉庫已安裝 `.git/hooks/pre-commit` 自動掃描攔截機制，嚴禁使用 `--no-verify` 強行繞過。任何洩漏行為均屬重大事故！
+
 ---
 
 ## 🏗️ 1. System Overview & Tech Stack
