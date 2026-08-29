@@ -12,6 +12,10 @@
   - 預設 LLM 與 Fallback 全面切換為 Google Gemini 最新模型 `models/gemini-flash-latest`（汰換 `gemini-2.5-flash`）。
   - 設定指定 Google Gemini 專用權杖 `your_gemini_api_key_here`。
   - 端點統一走 OpenAI 相容協議 `https://generativelanguage.googleapis.com/v1beta/openai/`，大幅提升 14 位分析師與投資圓桌會議推論之產出速度與雙語結構穩定度。
+- **API 介面極簡化（前端解耦 LLM 實作細節）**：
+  - 徹底自 [skill.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/skill.md)、`static/skill.md`、`static/swagger.json` 與 [README.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/README.md) 移除前端需要感知或傳遞 `modelName` / `modelProvider` 的反直覺設計。
+  - 後端全面封裝 LLM 調度與自動容錯轉移，前端/調用端僅需傳入股票代號（`tickers`）與選填之分析參數。
+- **清理失效模型**：自模型清單中移除已失效的 `qwen/qwen3.8-27b`。
 - **更新核心設定與代碼**：
   - [src/llm/models.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/llm/models.py)：更新 `AVAILABLE_MODELS`、`get_model()` 與 `get_fallback_model()` 預設為 `models/gemini-flash-latest`。
   - [src/utils/llm.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/utils/llm.py)：`call_llm` 與安全降級邏輯更新。

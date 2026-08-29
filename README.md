@@ -41,7 +41,7 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 
 - 🏛️ **多輪投資圓桌會議 (Multi-Round Round Table)**：讓 14 位投資大師進行多輪攻防辯論（開場 ➔ 質疑 ➔ 達成委員會共識）。
 - 🌐 **整合 2md 系列即時搜尋**：透過 `2md.aiurl.tw` / `2md.glsoft.ai` / `create360.ai` 即時獲取全球即時新聞與社群風向，徹底解決非美股與新聞時效問題。
-- 🤖 **主要與雙層備援 LLM 機制**：預設採用 `https://nen.com.tw/v1/` (`deepseek-v4-flash`)，若遇異常自動無縫降級至官方 ChatGPT (`gpt-4o`)。
+- 🤖 **主要與雙層備援 LLM 機制**：預設採用 Google Gemini 最新旗艦模型 (`models/gemini-flash-latest`)，後端自動管理並具備無縫容錯降級能力，前端與呼叫端完全無需感知或指定底層 LLM。
 - 📈 **社群風向與散戶情緒**：WSB Agent 整合即時社群動能與選擇權軋空潛力評估。
 - 📦 **Docker 一鍵部署**：內建 Flask API 與 Swagger UI，支援 WebSocket 即時日誌廣播與 Discord Webhook 報告推送。
 
@@ -75,18 +75,17 @@ pip install -r requirements.txt
 ### **3️⃣ 設定環境變數 (`.env`)**
 ```ini
 # LLM 預設設定
-DEFAULT_MODEL=deepseek-v4-flash
-DEFAULT_MODEL_PROVIDER=OpenAI-Compatible
+DEFAULT_MODEL=models/gemini-flash-latest
+DEFAULT_MODEL_PROVIDER=Gemini
 
-# 主要 LLM (nen.com.tw)
-PRIMARY_BASE_URL=https://nen.com.tw/v1
-PRIMARY_API_KEY=your-primary-api-key
-OPENAI_BASE_URL=https://nen.com.tw/v1
-OPENAI_API_KEY=your-primary-api-key
+# Gemini API 金鑰與端點
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
 
-# 備援 LLM (ChatGPT 官方)
-FALLBACK_BASE_URL=https://api.openai.com/v1
-FALLBACK_API_KEY=your-openai-api-key
+# 備援 LLM 設定
+FALLBACK_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+FALLBACK_MODEL=models/gemini-flash-latest
+FALLBACK_API_KEY=your_gemini_api_key_here
 
 # 金融數據 API Keys（可選）
 ALPHA_VANTAGE_API_KEY=

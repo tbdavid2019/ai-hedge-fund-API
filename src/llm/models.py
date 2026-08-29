@@ -124,11 +124,6 @@ AVAILABLE_MODELS = [
         provider=ModelProvider.GROQ
     ),
     LLMModel(
-        display_name="[groq] qwen/qwen3.8-27b",
-        model_name="qwen/qwen3.8-27b",
-        provider=ModelProvider.GROQ
-    ),
-    LLMModel(
         display_name="[groq] openai/gpt-oss-20b",
         model_name="openai/gpt-oss-20b",
         provider=ModelProvider.GROQ

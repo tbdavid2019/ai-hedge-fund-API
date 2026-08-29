@@ -11,7 +11,7 @@ This document is designed for AI Agents and LLMs to understand and interact with
 - **API Documentation**: `http://localhost:6000/docs`
 - **Health Check**: `http://localhost:6000/api/health`
 - **Swagger JSON**: `http://localhost:6000/static/swagger.json`
-- **Default LLM Engine**: `deepseek-v4-flash` (`https://nen.com.tw/v1/`) with seamless `gpt-4o` (ChatGPT) automatic fallback.
+- **Default LLM Engine**: Google Gemini (`models/gemini-flash-latest`) managed automatically by backend with resilient failover.
 
 ---
 
@@ -63,7 +63,6 @@ Execute deep investment analysis across selected AI investor personas with optio
 | `initialCash` | number | ❌ | `100000` | Starting portfolio cash |
 | `startDate` | string | ❌ | 3 months ago | Historical start date (`YYYY-MM-DD`) |
 | `endDate` | string | ❌ | Today | Analysis end date (`YYYY-MM-DD`) |
-| `modelName` | string | ❌ | Server Default | *(Optional)* Override LLM model (Server automatically defaults to `deepseek-v4-flash` with `gpt-4o` fallback) |
 
 #### Response Format (JSON):
 ```json

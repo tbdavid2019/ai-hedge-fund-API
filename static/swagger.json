@@ -35,7 +35,6 @@
                   "value": {
                     "tickers": "TSLA,NVDA",
                     "selectedAnalysts": ["warren_buffett", "cathie_wood", "michael_burry", "wsb", "technical_analyst"],
-                    "modelName": "gpt-4o",
                     "enableRoundTable": true,
                     "roundTableRounds": 2
                   }
@@ -44,8 +43,7 @@
                   "summary": "單一股票分析",
                   "value": {
                     "tickers": "TSLA",
-                    "selectedAnalysts": ["warren_buffett", "peter_lynch", "michael_burry"],
-                    "modelName": "gpt-4o"
+                    "selectedAnalysts": ["warren_buffett", "peter_lynch", "michael_burry"]
                   }
                 }
               }
@@ -195,18 +193,6 @@
                 "valuation_analyst"
               ]
             },
-            "example": ["warren_buffett", "cathie_wood", "michael_burry", "wsb"]
-          },
-          "modelName": {
-            "type": "string",
-            "description": "使用的 LLM 模型名稱",
-            "example": "gpt-4o"
-          },
-          "modelProvider": {
-            "type": "string",
-            "description": "模型供應商（OpenAI, Anthropic, Gemini, DeepSeek, Groq 等，預設自動推斷）",
-            "example": "OpenAI"
-          },
           "enableRoundTable": {
             "type": "boolean",
             "description": "是否在分析師分析後啟用多輪圓桌會議辯論",
