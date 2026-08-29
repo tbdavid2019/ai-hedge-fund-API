@@ -200,12 +200,16 @@ curl -X POST "http://localhost:6000/api/analysis" \
 
 ## 📋 8. Mandatory AI Coding Agent Workflow Rules (AI Agent 必守開發規則)
 
-AI Coding Agents (Antigravity, Claude, Cursor, Devin 等) 在對本倉庫進行任何代碼修改時，**必須嚴格遵守以下開發流程與規範**：
+AI Coding Agents (Antigravity, Claude, Cursor, Devin 等) 在對本倉庫進行任何代碼修改時，**必須嚴格遵守以下開發流程與安全鐵律**：
 
+0. **🛑 絕對零容忍安全鐵律：嚴禁外洩或硬編碼任何真實 API Key (Zero-Tolerance Security Iron Rule)**:
+   - **嚴禁硬編碼 (NO Hardcoded Secrets)**：絕對禁止在 Python 代碼 (`src/**/*.py`)、配置範例 (`.env.example`)、Markdown 文件 (`CHANGELOG.md`, `README.md`, `skill.md`, `AGENTS.md` 等) 或 Git Commit 訊息中寫入任何真實的 API 金鑰（包括但不限於 Google Gemini `AIzaSy...`、OpenAI `sk-...`、Groq `gsk_...`、Anthropic `sk-ant-...`、GitHub `ghp_...`）。
+   - **唯一來源原則**：所有的 API Key 必須且只能存放在受 `.gitignore` 嚴格保護的本機與伺服器 `.env` 檔案中，代碼端一律使用 `os.getenv("KEY_NAME")` 讀取，缺省時只能報錯或留空，範例檔僅允許使用 `your_api_key_here` 佔位符。
+   - **Pre-commit 攔截不可繞過**：倉庫已安裝 `.git/hooks/pre-commit` 自動掃描攔截機制，任何嘗試提交金鑰的行為會被直接拒絕，嚴禁使用 `--no-verify` 強行繞過。
 1. **📝 每次異動必須更新 `CHANGELOG.md` (Mandatory CHANGELOG.md Update)**:
-   - 每次修復 Bug、優化功能、調整架構或新增 Agent，**一律必須在 [CHANGELOG.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/CHANGELOG.md) 紀錄詳細改動與版本歷程**。
+   - 每次修復 Bug、優化功能、調整架構或新增 Agent，**一律必須在 [CHANGELOG.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/CHANGELOG.md) 紀錄詳細改動與版本歷程**（日誌中亦絕不可記錄任何真實金鑰）。
 2. **📖 必要時同步更新 `README.md` 與 `skill.md`**:
    - 當 API 端點、請求參數、環境變數或專案結構異動時，必須同步更新 [skill.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/skill.md)（及 `static/skill.md`）與 [README.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/README.md)。
 3. **🚀 遠端主機部署與驗證 (Remote Deployment & Verification)**:
-   - 完成修改並通過語法檢查後，必須提交並推送至 GitHub (`origin/main`)。
+   - 完成修改並通過語法與安全檢查後，必須提交並推送至 GitHub (`origin/main`)。
    - 連線至遠端生產主機（`ssh ubuntu@dns.glsoft.ai`）拉取最新代碼 (`git pull`) 並確保容器重啟生效，執行 `curl http://localhost:6000/api/health` 完成端對端驗證。
