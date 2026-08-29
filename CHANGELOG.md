@@ -53,7 +53,7 @@
 - **移除失效平台模型**：徹底移除不穩定的 `nen.com.tw` / `deepseek-v4-flash` 預設依賴。
 - **全面升級主要與備用模型**：
   - 預設 LLM 與 Fallback 全面切換為 Google Gemini 最新模型 `models/gemini-flash-latest`（汰換 `gemini-2.5-flash`）。
-  - 設定指定 Google Gemini 專用權杖 `your_gemini_api_key_here`。
+  - 支援 Google Gemini 專用權杖環境變數 (`GEMINI_API_KEY`)。
   - 端點統一走 OpenAI 相容協議 `https://generativelanguage.googleapis.com/v1beta/openai/`，大幅提升 14 位分析師與投資圓桌會議推論之產出速度與雙語結構穩定度。
 - **API 介面極簡化（前端解耦 LLM 實作細節）**：
   - 徹底自 [skill.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/skill.md)、`static/skill.md`、`static/swagger.json` 與 [README.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/README.md) 移除前端需要感知或傳遞 `modelName` / `modelProvider` 的反直覺設計。
