@@ -158,10 +158,10 @@ def create_workflow(selected_analysts=None):
     
     print(f"\n{Fore.YELLOW}Creating workflow with analysts: {selected_analysts}{Style.RESET_ALL}")
     
-    # Default to all analysts if none selected
-    if selected_analysts is None:
+    # Default to all analysts if none selected or empty list passed
+    if not selected_analysts:
         selected_analysts = list(analyst_nodes.keys())
-        print(f"{Fore.RED}No analysts specified, defaulting to all: {selected_analysts}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}No analysts specified, defaulting to all: {selected_analysts}{Style.RESET_ALL}")
     
     # Add all selected analyst nodes
     for analyst_key in selected_analysts:
