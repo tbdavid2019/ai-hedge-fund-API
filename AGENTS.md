@@ -24,7 +24,7 @@ This document is the authoritative **Developer & System Architecture Guide** for
 - **Web API & WebSockets**: Flask, `flask-cors`, `flask-sock` (running by default on port `6000`).
 - **Data Validation & Schemas**: `pydantic` (v2.x).
 - **Live Search & Scraping**: `2md` series (`2md.aiurl.tw`, `2md.glsoft.ai`, `create360.ai`).
-- **LLM Engine**: Primary `models/gemini-flash-latest` (`Gemini` via `https://generativelanguage.googleapis.com/v1beta/openai/`) with seamless automatic failover.
+- **LLM Engine**: Primary `openai/gpt-oss-20b` (`Groq`) with seamless automatic Gemini fallback.
 
 ---
 
