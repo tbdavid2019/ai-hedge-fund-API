@@ -143,9 +143,12 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
     """
     Instantiate Chat LLM model.
     Defaults to Primary Model (models/gemini-flash-latest via Gemini).
+    Fully backward-compatible: automatically normalizes legacy/obsolete model names.
     """
-    if not model_name:
+    # If model_name is missing, auto, or obsolete legacy string, use server primary default
+    if not model_name or str(model_name).lower() in ["auto", "deepseek-v4-flash", "default", "none", ""]:
         model_name = os.getenv("DEFAULT_MODEL", "models/gemini-flash-latest")
+        model_provider = ModelProvider.GEMINI
     
     # Auto-detect provider if model matches known signatures
     if isinstance(model_provider, str):

@@ -67,23 +67,23 @@ def sanitize_json_output(obj):
 
 
 def infer_model_provider(model_name: str, specified_provider: str = None) -> str:
-    """自動推斷 LLM 模型供應商"""
-    if specified_provider and specified_provider.lower() not in ["auto", ""]:
+    """自動推斷 LLM 模型供應商（後端完全自主管理，前端無需傳遞）"""
+    if specified_provider and specified_provider.lower() not in ["auto", "openai-compatible", ""]:
         return specified_provider
     
-    if not model_name:
-        return "OpenAI"
+    if not model_name or str(model_name).lower() in ["auto", "deepseek-v4-flash", "default", "none", ""]:
+        return os.getenv("DEFAULT_MODEL_PROVIDER", "Gemini")
     
     name = model_name.lower()
     if "claude" in name:
         return "Anthropic"
     elif "gemini" in name:
         return "Gemini"
-    elif "deepseek-r1-distill" in name or "llama" in name:
+    elif "llama" in name or "groq" in name:
         return "Groq"
     elif "deepseek" in name:
         return "DeepSeek"
-    return "OpenAI"
+    return os.getenv("DEFAULT_MODEL_PROVIDER", "Gemini")
 
 
 def send_discord_notification(tickers, result, analysis_date):
