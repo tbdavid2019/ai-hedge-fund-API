@@ -55,9 +55,9 @@ def call_llm(
     # Inject bilingual English & Traditional Chinese instruction
     prompt = inject_bilingual_instruction(prompt)
 
-    # 1. Attempt Primary LLM Model (models/gemini-flash-latest via Gemini)
-    model_name = model_name or os.getenv("DEFAULT_MODEL", "models/gemini-flash-latest")
-    model_provider = model_provider or os.getenv("DEFAULT_MODEL_PROVIDER", "Gemini")
+    # 1. Attempt Primary LLM Model (openai/gpt-oss-120b via Groq)
+    model_name = model_name or os.getenv("DEFAULT_MODEL", "openai/gpt-oss-120b")
+    model_provider = model_provider or os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
     model_info = get_model_info(model_name)
 
     try:

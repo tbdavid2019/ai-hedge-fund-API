@@ -93,11 +93,11 @@ graph TD
 All LLM calls in the codebase MUST be resilient against upstream provider outages.
 
 1. **Primary Model**:
-   - Provider: `Gemini`
-   - Base URL: `https://generativelanguage.googleapis.com/v1beta/openai/`
-   - Model: `models/gemini-flash-latest` (or `gemini-flash-latest`)
-   - Key: `GEMINI_API_KEY` or `FALLBACK_API_KEY` (`your_gemini_api_key_here`)
+   - Provider: `Groq`
+   - Model: `openai/gpt-oss-120b` (or `openai/gpt-oss-20b`)
+   - Key: `GROQ_API_KEY`
 2. **Automatic Failover Model**:
+   - Provider: `Gemini`
    - Base URL: `FALLBACK_BASE_URL` (Default: `https://generativelanguage.googleapis.com/v1beta/openai/`)
    - Model: `FALLBACK_MODEL` (Default: `models/gemini-flash-latest`)
    - Key: `FALLBACK_API_KEY` or `GEMINI_API_KEY`

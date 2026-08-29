@@ -4,6 +4,25 @@
 
 ---
 
+## 🚀 [v2.2.0] - 2026-08-29
+
+### ⚡ 1. 切換主力模型為 Groq 極速推理架構並強化金鑰防洩漏安全機制
+- **主力模型全面升級為 Groq**：
+  - 預設主力 LLM 切換為 Groq 極速開源旗艦模型 `openai/gpt-oss-120b`（與備選 `openai/gpt-oss-20b`）。
+  - 提供超高吞吐量與亞秒級推論延遲，支援 14 位分析師與投資圓桌會議即時決策。
+- **雙層備援機制 (Fallback to Gemini)**：
+  - 若遇 Groq 頻率限制或網路抖動，後端自動無縫降級至 Google Gemini `models/gemini-flash-latest`。
+- **嚴格金鑰安全與程式碼去硬編碼 (Zero Hardcoded Keys)**：
+  - 徹底移除程式碼中所有硬編碼的金鑰字串，所有 API 金鑰均嚴格自 `.env` 動態讀取。
+  - `.env.example` 統一改為佔位符（Placeholders），杜絕因 Git Commit 洩漏金鑰之風險。
+- **更新核心設定與代碼**：
+  - [src/llm/models.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/llm/models.py)：更新 `AVAILABLE_MODELS`、`get_model()` 預設為 Groq `openai/gpt-oss-120b`。
+  - [src/utils/llm.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/utils/llm.py)：`call_llm` 預設為 Groq。
+  - [webui2.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/webui2.py) & [src/main.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/main.py)：預設模型與供應商切換為 `openai/gpt-oss-120b` / `Groq`。
+  - [AGENTS.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/AGENTS.md)、[skill.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/skill.md) & [README.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/README.md)：同步更新架構與接口說明。
+
+---
+
 ## 🚀 [v2.1.2] - 2026-08-29
 
 ### ⚡ 1. 移除失效 nen.com.tw 並全面升級 Google Gemini 最新旗艦模型

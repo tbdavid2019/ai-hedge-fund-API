@@ -34,9 +34,21 @@ class LLMModel(BaseModel):
 
 # Define available models
 AVAILABLE_MODELS = [
-    # Primary default model
+    # Primary default model (Groq)
     LLMModel(
-        display_name="[gemini] models/gemini-flash-latest (Primary Default)",
+        display_name="[groq] openai/gpt-oss-120b (Primary Default)",
+        model_name="openai/gpt-oss-120b",
+        provider=ModelProvider.GROQ
+    ),
+    LLMModel(
+        display_name="[groq] openai/gpt-oss-20b",
+        model_name="openai/gpt-oss-20b",
+        provider=ModelProvider.GROQ
+    ),
+
+    # Gemini Models (Fallback & Options)
+    LLMModel(
+        display_name="[gemini] models/gemini-flash-latest (Fallback)",
         model_name="models/gemini-flash-latest",
         provider=ModelProvider.GEMINI
     ),
@@ -116,18 +128,6 @@ AVAILABLE_MODELS = [
         model_name="deepseek-reasoner",
         provider=ModelProvider.DEEPSEEK
     ),
-
-    # Groq Models
-    LLMModel(
-        display_name="[groq] openai/gpt-oss-120b",
-        model_name="openai/gpt-oss-120b",
-        provider=ModelProvider.GROQ
-    ),
-    LLMModel(
-        display_name="[groq] openai/gpt-oss-20b",
-        model_name="openai/gpt-oss-20b",
-        provider=ModelProvider.GROQ
-    ),
 ]
 
 # Create LLM_ORDER in the format expected by the UI
@@ -142,13 +142,13 @@ def get_model_info(model_name: str) -> Optional[LLMModel]:
 def get_model(model_name: str = None, model_provider: ModelProvider = None) -> Any:
     """
     Instantiate Chat LLM model.
-    Defaults to Primary Model (models/gemini-flash-latest via Gemini).
+    Defaults to Primary Model (openai/gpt-oss-120b via Groq).
     Fully backward-compatible: automatically normalizes legacy/obsolete model names.
     """
     # If model_name is missing, auto, or obsolete legacy string, use server primary default
     if not model_name or str(model_name).lower() in ["auto", "deepseek-v4-flash", "default", "none", ""]:
-        model_name = os.getenv("DEFAULT_MODEL", "models/gemini-flash-latest")
-        model_provider = ModelProvider.GEMINI
+        model_name = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-120b")
+        model_provider = os.getenv("DEFAULT_MODEL_PROVIDER", ModelProvider.GROQ)
     
     # Auto-detect provider if model matches known signatures
     if isinstance(model_provider, str):
@@ -157,8 +157,16 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
         except Exception:
             pass
 
-    if model_provider == ModelProvider.GEMINI or "gemini" in model_name.lower():
-        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("FALLBACK_API_KEY") or "your_gemini_api_key_here"
+    if model_provider == ModelProvider.GROQ or "gpt-oss" in str(model_name).lower():
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("Groq API key not found. Please set GROQ_API_KEY in .env file.")
+        return ChatGroq(model=model_name, api_key=api_key, temperature=0.2)
+
+    elif model_provider == ModelProvider.GEMINI or "gemini" in str(model_name).lower():
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("FALLBACK_API_KEY")
+        if not api_key:
+            raise ValueError("Gemini API key not found. Please set GEMINI_API_KEY in .env file.")
         base_url = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
         return ChatOpenAI(
             model=model_name,
@@ -166,12 +174,6 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
             base_url=base_url,
             temperature=0.2
         )
-
-    if model_provider == ModelProvider.GROQ:
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError("Groq API key not found. Please set GROQ_API_KEY in .env file.")
-        return ChatGroq(model=model_name, api_key=api_key)
 
     elif model_provider == ModelProvider.OPENAI:
         api_key = os.getenv("FALLBACK_API_KEY") or os.getenv("OPENAI_API_KEY")
@@ -200,8 +202,10 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
         )
 
     elif model_provider == ModelProvider.OPENAI_COMPATIBLE:
-        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("CUSTOM_API_KEY") or os.getenv("GEMINI_API_KEY") or "your_gemini_api_key_here"
-        base_url = os.getenv("PRIMARY_BASE_URL") or os.getenv("CUSTOM_BASE_URL") or "https://generativelanguage.googleapis.com/v1beta/openai/"
+        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("CUSTOM_API_KEY") or os.getenv("GROQ_API_KEY")
+        base_url = os.getenv("PRIMARY_BASE_URL") or os.getenv("CUSTOM_BASE_URL") or "https://api.groq.com/openai/v1"
+        if not api_key:
+            raise ValueError("API key not found. Please set GROQ_API_KEY in .env file.")
         return ChatOpenAI(
             api_key=api_key,
             base_url=base_url,
@@ -209,16 +213,22 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
         )
 
     # Fallback
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("FALLBACK_API_KEY") or os.getenv("OPENAI_API_KEY") or "your_gemini_api_key_here"
-    base_url = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
-    return ChatOpenAI(model=model_name, api_key=api_key, base_url=base_url)
+    api_key = os.getenv("GROQ_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("API key not found. Please set GROQ_API_KEY or GEMINI_API_KEY in .env file.")
+    if "gemini" in str(model_name).lower():
+        base_url = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+        return ChatOpenAI(model=model_name, api_key=api_key, base_url=base_url)
+    return ChatGroq(model=model_name, api_key=api_key, temperature=0.2)
 
 
 def get_fallback_model(fallback_model_name: Optional[str] = None) -> Any:
     """Get fallback model instance with custom fallback URL and model support"""
     fallback_model_name = fallback_model_name or os.getenv("FALLBACK_MODEL", "models/gemini-flash-latest")
     base_url = os.getenv("FALLBACK_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
-    api_key = os.getenv("FALLBACK_API_KEY") or os.getenv("GEMINI_API_KEY") or "your_gemini_api_key_here"
+    api_key = os.getenv("FALLBACK_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("Fallback API key not found. Please set FALLBACK_API_KEY or GEMINI_API_KEY in .env file.")
     return ChatOpenAI(
         model=fallback_model_name,
         api_key=api_key,
