@@ -4,6 +4,18 @@
 
 ---
 
+## 🚀 [v2.1.1] - 2026-08-29
+
+### 🔑 1. 修復 LLM 憑證過期與多級容錯降級機制 (解決分析師 Agent 中性 0% 無反應問題)
+- **問題根因修復**：修復了因 `PRIMARY_API_KEY`（`nen.com.tw`）權杖過期與 `FALLBACK_API_KEY`（OpenAI）無效，導致巴菲特、蒙格、伍德、貝瑞、林區、費雪、WSB、葛拉漢、艾克曼、裴洛西與投資組合經理等 11 位 LLM 分析師因 401 錯誤而退回預設 `neutral 0%` 的問題。
+- **更新有效平台 Token**：更新 `nen.com.tw` 有效金鑰，並支援 `deepseek-v4-flash` 與 `gpt-5-mini` 等核心模型。
+- **多級備用容錯架構升級**：
+  - 升級 [src/llm/models.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/llm/models.py) 的 `get_fallback_model()`，動態支援 `FALLBACK_BASE_URL`、`FALLBACK_MODEL`（預設 Gemini 2.5 Flash / OpenAI compatible）與 `FALLBACK_API_KEY`，擺脫過去寫死 OpenAI 官方 URL 導致額度不足時無法自動切換的問題。
+  - 增強 [src/utils/llm.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/utils/llm.py) 的 JSON 提取容錯能力（支援無語言標籤的 markdown 區塊與末尾逗號正規化修復）。
+  - 更新 [src/round_table/engine.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/round_table/engine.py) 的圓桌會議降級調用邏輯。
+
+---
+
 ## 🚀 [v2.1.0] - 2026-08-27
 
 ### 🗼 1. 導入 Watchtower 自動化維運與 yfinance 自主檢測重建機制

@@ -92,13 +92,14 @@ def call_llm(
                     raise e
                     
     except Exception as primary_err:
-        print(f"[LLM Warning] Primary model '{model_name}' failed: {primary_err}. Activating ChatGPT (gpt-4o) fallback...")
+        fallback_model_name = os.getenv("FALLBACK_MODEL", "gemini-2.5-flash")
+        print(f"[LLM Warning] Primary model '{model_name}' failed: {primary_err}. Activating fallback ({fallback_model_name})...")
         if agent_name:
-            progress.update_status(agent_name, None, "Falling back to ChatGPT (gpt-4o)")
+            progress.update_status(agent_name, None, f"Falling back to {fallback_model_name}")
 
-        # 2. Seamless Fallback to official ChatGPT (gpt-4o)
+        # 2. Seamless Fallback
         try:
-            fallback_llm = get_fallback_model("gpt-4o")
+            fallback_llm = get_fallback_model(fallback_model_name)
             try:
                 fallback_structured = fallback_llm.with_structured_output(
                     pydantic_model,
@@ -117,7 +118,7 @@ def call_llm(
                 return pydantic_model(**parsed)
 
         except Exception as fallback_err:
-            print(f"[LLM Error] Fallback ChatGPT also failed: {fallback_err}")
+            print(f"[LLM Error] Fallback ({fallback_model_name}) also failed: {fallback_err}")
 
     # 3. If both primary and fallback fail, use default factory or safe default
     if default_factory:
@@ -157,15 +158,14 @@ def extract_json_from_response(content: str) -> Optional[dict]:
     except Exception:
         pass
 
-    # Try ```json markdown blocks
+    # Try ```json or ``` markdown blocks
     try:
-        json_start = content.find("```json")
-        if json_start != -1:
-            json_text = content[json_start + 7:]
-            json_end = json_text.find("```")
-            if json_end != -1:
-                json_text = json_text[:json_end].strip()
-                return json.loads(json_text)
+        if "```json" in content:
+            json_text = content.split("```json")[1].split("```")[0].strip()
+            return json.loads(json_text)
+        elif "```" in content:
+            json_text = content.split("```")[1].split("```")[0].strip()
+            return json.loads(json_text)
     except Exception:
         pass
 
@@ -174,7 +174,14 @@ def extract_json_from_response(content: str) -> Optional[dict]:
         start = content.find("{")
         end = content.rfind("}")
         if start != -1 and end != -1 and end > start:
-            return json.loads(content[start:end+1])
+            raw_substr = content[start:end+1]
+            try:
+                return json.loads(raw_substr)
+            except Exception:
+                # Clean trailing commas before closing braces/brackets
+                import re
+                cleaned = re.sub(r',\s*([\]}])', r'\1', raw_substr)
+                return json.loads(cleaned)
     except Exception as e:
         print(f"Error extracting JSON from response: {e}")
         

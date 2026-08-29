@@ -152,7 +152,7 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
             pass
 
     if model_name == "deepseek-v4-flash" or (model_provider == ModelProvider.OPENAI_COMPATIBLE and "nen" in os.getenv("OPENAI_BASE_URL", "https://nen.com.tw/v1")):
-        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("NEN_API_KEY") or os.getenv("OPENAI_API_KEY", "sk-XqYJN7YDjomSEeOPn9GsHvSpspYLuQrxdgQc2zcA3kvuZD34")
+        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("NEN_API_KEY") or os.getenv("OPENAI_API_KEY", "your_primary_api_key_here")
         base_url = os.getenv("PRIMARY_BASE_URL") or os.getenv("OPENAI_BASE_URL", "https://nen.com.tw/v1")
         return ChatOpenAI(
             model=model_name,
@@ -209,7 +209,7 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
         )
 
     elif model_provider == ModelProvider.OPENAI_COMPATIBLE:
-        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("CUSTOM_API_KEY") or os.getenv("OPENAI_API_KEY", "sk-XqYJN7YDjomSEeOPn9GsHvSpspYLuQrxdgQc2zcA3kvuZD34")
+        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("CUSTOM_API_KEY") or os.getenv("OPENAI_API_KEY", "your_primary_api_key_here")
         base_url = os.getenv("PRIMARY_BASE_URL") or os.getenv("CUSTOM_BASE_URL") or os.getenv("OPENAI_BASE_URL", "https://nen.com.tw/v1")
         return ChatOpenAI(
             api_key=api_key,
@@ -224,13 +224,15 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
     return ChatOpenAI(model=model_name, api_key=api_key)
 
 
-def get_fallback_model(fallback_model_name: str = "gpt-4o") -> Any:
-    """Get official OpenAI ChatGPT fallback model instance"""
-    api_key = os.getenv("FALLBACK_API_KEY") or os.getenv("OPENAI_API_KEY")
+def get_fallback_model(fallback_model_name: Optional[str] = None) -> Any:
+    """Get fallback model instance with custom fallback URL and model support"""
+    fallback_model_name = fallback_model_name or os.getenv("FALLBACK_MODEL", "gemini-2.5-flash")
+    base_url = os.getenv("FALLBACK_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+    api_key = os.getenv("FALLBACK_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY")
     if not api_key:
-        raise ValueError("Fallback OpenAI API key not found.")
+        raise ValueError("Fallback API key not found.")
     return ChatOpenAI(
         model=fallback_model_name,
         api_key=api_key,
-        base_url="https://api.openai.com/v1"
+        base_url=base_url
     )

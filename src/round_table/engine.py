@@ -202,10 +202,15 @@ Return a strictly valid JSON object matching this schema:
         try:
             raw_res = llm.invoke(messages)
         except Exception as primary_err:
-            logger.warning(f"[RoundTable] Primary LLM failed: {primary_err}. Falling back to ChatGPT (gpt-4o)...")
             from llm.models import get_fallback_model
-            fallback_llm = get_fallback_model("gpt-4o")
-            raw_res = fallback_llm.invoke(messages)
+            fallback_model_name = os.getenv("FALLBACK_MODEL", "gemini-2.5-flash")
+            logger.warning(f"[RoundTable] Primary LLM failed: {primary_err}. Falling back to ({fallback_model_name})...")
+            try:
+                fallback_llm = get_fallback_model(fallback_model_name)
+                raw_res = fallback_llm.invoke(messages)
+            except Exception as fb_err:
+                logger.error(f"[RoundTable] Fallback LLM also failed: {fb_err}")
+                raise primary_err
             
         content = raw_res.content if hasattr(raw_res, "content") else str(raw_res)
 
