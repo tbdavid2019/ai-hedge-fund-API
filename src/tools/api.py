@@ -134,12 +134,19 @@ def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = Fa
             for index, row in df.iterrows():
                 date_str = index.strftime('%Y-%m-%d')
                 try:
+                    close_val = float(row['Close'])
+                    if pd.isna(close_val) or np.isnan(close_val) or close_val <= 0:
+                        continue
+                    open_val = float(row['Open']) if not pd.isna(row['Open']) else close_val
+                    high_val = float(row['High']) if not pd.isna(row['High']) else close_val
+                    low_val = float(row['Low']) if not pd.isna(row['Low']) else close_val
+                    vol_val = int(row['Volume']) if not pd.isna(row['Volume']) else 0
                     price = Price(
-                        open=float(row['Open']),
-                        close=float(row['Close']),
-                        high=float(row['High']),
-                        low=float(row['Low']),
-                        volume=int(row['Volume']),
+                        open=open_val,
+                        close=close_val,
+                        high=high_val,
+                        low=low_val,
+                        volume=vol_val,
                         time=date_str
                     )
                     prices.append(price)
@@ -1355,12 +1362,15 @@ def get_market_cap(
 
 def prices_to_df(prices: list[Price]) -> pd.DataFrame:
     """Convert prices to a DataFrame."""
+    if not prices:
+        return pd.DataFrame()
     df = pd.DataFrame([p.model_dump() for p in prices])
     df["Date"] = pd.to_datetime(df["time"])
     df.set_index("Date", inplace=True)
     numeric_cols = ["open", "close", "high", "low", "volume"]
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce")
+    df = df.dropna(subset=["close"])
     df.sort_index(inplace=True)
     return df
 

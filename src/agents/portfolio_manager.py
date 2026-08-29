@@ -42,7 +42,16 @@ def portfolio_management_agent(state: AgentState):
         # Get position limits and current prices for the ticker
         risk_data = analyst_signals.get("risk_management_agent", {}).get(ticker, {})
         position_limits[ticker] = risk_data.get("remaining_position_limit", 0)
-        current_prices[ticker] = risk_data.get("current_price", 0)
+        raw_price = risk_data.get("current_price", 0)
+        if raw_price is None or str(raw_price).lower() == "nan":
+            current_prices[ticker] = 0.0
+        else:
+            try:
+                current_prices[ticker] = float(raw_price)
+                if current_prices[ticker] != current_prices[ticker]:  # check for NaN
+                    current_prices[ticker] = 0.0
+            except (ValueError, TypeError):
+                current_prices[ticker] = 0.0
 
         # Calculate maximum shares allowed based on position limit and price
         if current_prices[ticker] > 0:

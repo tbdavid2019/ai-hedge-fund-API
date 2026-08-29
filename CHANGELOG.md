@@ -4,6 +4,20 @@
 
 ---
 
+## 🚀 [v2.2.1] - 2026-08-29
+
+### 🐛 1. 修復 yfinance 尾列 NaN 導致市場價格無效 (NaN) 與無法下單 (Hold 0股) 之重大 Bug
+- **根因定位**：
+  - Yahoo Finance 在美股非開盤時段、週末或盤前同步時，`yf.Ticker().history()` 的最後一行常會返回包含空值之預留列（`Open: NaN, Close: NaN`）。
+  - `src/tools/api.py` 過去未過濾 `NaN` 數值，導致 `Price` 物件攜帶 `NaN`；當 `risk_manager` 執行 `prices_df["close"].iloc[-1]` 時直接取得 `NaN` 股價，並傳遞給 `portfolio_manager`。
+  - `portfolio_manager` 因無法計算 `max_shares`（計算為 0 股）且當前價格為 `NaN`，迫使大師與經理人只能給出「市場價格無效/缺失 (NaN)，維持觀望 (Hold 0股)」之非預期交易決策。
+- **全面修復防護**：
+  - [src/tools/api.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/tools/api.py)：在 `get_prices()` 中全面過濾 `Close <= 0` 或 `NaN` 行；在 `prices_to_df()` 中自動執行 `df.dropna(subset=['close'])`。
+  - [src/agents/risk_manager.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/risk_manager.py)：改採 `close_series = prices_df["close"].dropna()` 並驗證 `current_price > 0`，徹底杜絕 `NaN` 進入風控與下單模組。
+  - [src/agents/portfolio_manager.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/portfolio_manager.py)：加入股價正規化與防呆防護。
+
+---
+
 ## 🚀 [v2.2.0] - 2026-08-29
 
 ### ⚡ 1. 切換主力模型為 Groq 極速推理架構並強化金鑰防洩漏安全機制

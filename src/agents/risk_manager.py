@@ -44,11 +44,23 @@ def risk_management_agent(state: AgentState):
             continue
 
         prices_df = prices_to_df(prices)
+        if prices_df.empty or "close" not in prices_df.columns:
+            progress.update_status("risk_management_agent", ticker, "Failed: No price data found")
+            continue
+
+        close_series = prices_df["close"].dropna()
+        if close_series.empty:
+            progress.update_status("risk_management_agent", ticker, "Failed: No valid close price found")
+            continue
+
+        current_price = float(close_series.iloc[-1])
+        if pd.isna(current_price) or current_price <= 0:
+            progress.update_status("risk_management_agent", ticker, "Failed: Invalid price found")
+            continue
 
         progress.update_status("risk_management_agent", ticker, "Calculating position limits")
 
         # Calculate portfolio value
-        current_price = prices_df["close"].iloc[-1]
         current_prices[ticker] = current_price  # Store the current price
 
         # Calculate current position value for this ticker
