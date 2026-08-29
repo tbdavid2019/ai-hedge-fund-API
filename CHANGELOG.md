@@ -4,6 +4,24 @@
 
 ---
 
+## 🚀 [v2.2.3] - 2026-08-29
+
+### 🛡️ 1. 全域 Antigravity 規則部署與跨語言多技術棧安全鐵律 (Multi-Stack Iron Rules)
+- **全域 Antigravity 規則配置**：
+  - 於全域路徑 `~/.gemini/config/AGENTS.md`、`~/.gemini/config/GEMINI.md`、`/Users/david/Documents/git/tbdavid2019/AGENTS.md` 與本專案 [AGENTS.md](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/AGENTS.md) 建立最高優先級【最高安全鐵律 · 絕對零容忍 (ZERO-TOLERANCE SECURITY IRON RULE)】。
+- **跨語言金鑰隔離標準**：
+  - 🐍 **Python**: 一律使用 `os.getenv("KEY_NAME")`。
+  - 🟨 **JavaScript / TypeScript / Node.js**: 一律使用 `process.env.KEY_NAME` 或 `import.meta.env.VITE_KEY_NAME`。
+  - ☁️ **Cloudflare Workers**: 一律透過 `env.KEY_NAME` 或 `wrangler secret put` 讀取，嚴禁寫入 `wrangler.toml` 或腳本常數中。
+  - 🌐 **前端網頁 / HTML / 靜態網站**: 嚴禁在 `<script>` 標籤或 JS 變數硬編碼後端 API Key；一律透過後端 API 代理轉發。
+  - 🐚 **Shell / Docker / CI**: 一律透過系統環境變數或受保護的 `.env` 注入。
+- **物理層全域 Git 攔截機制**：
+  - 於本機與遠端伺服器配置全域 `git config --global core.hooksPath ~/.git_hooks`（`~/.git_hooks/pre-commit`），在 Git 底層強制拒絕並中斷任何包含 `AIzaSy...`、`sk-...`、`gsk_...`、`ghp_...` 等特徵之提交。
+- **歷史 Commit 徹底清洗重寫**：
+  - 使用 `git filter-branch` 深層清洗所有歷史 Commit 並透過 `git push origin main --force` 強制覆蓋 GitHub，確保全倉庫歷史無任何真實金鑰殘留。
+
+---
+
 ## 🚀 [v2.2.2] - 2026-08-29
 
 ### ⚡ 1. 預設主力模型優化為 Groq 極速輕量旗艦 `openai/gpt-oss-20b`
