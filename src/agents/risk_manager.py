@@ -3,6 +3,8 @@ from graph.state import AgentState, show_agent_reasoning
 from utils.progress import progress
 from tools.api import get_prices, prices_to_df
 import json
+import math
+import pandas as pd
 
 
 ##### Risk Management Agent #####
