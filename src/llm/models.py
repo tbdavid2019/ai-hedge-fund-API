@@ -119,13 +119,18 @@ AVAILABLE_MODELS = [
 
     # Groq Models
     LLMModel(
-        display_name="[groq] deepseek-r1 70b",
-        model_name="deepseek-r1-distill-llama-70b",
+        display_name="[groq] openai/gpt-oss-120b",
+        model_name="openai/gpt-oss-120b",
         provider=ModelProvider.GROQ
     ),
     LLMModel(
-        display_name="[groq] llama-3.3 70b",
-        model_name="llama-3.3-70b-versatile",
+        display_name="[groq] qwen/qwen3.8-27b",
+        model_name="qwen/qwen3.8-27b",
+        provider=ModelProvider.GROQ
+    ),
+    LLMModel(
+        display_name="[groq] openai/gpt-oss-20b",
+        model_name="openai/gpt-oss-20b",
         provider=ModelProvider.GROQ
     ),
 ]
