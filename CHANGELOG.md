@@ -4,6 +4,22 @@
 
 ---
 
+## 🚀 [v2.1.2] - 2026-08-29
+
+### ⚡ 1. 移除失效 nen.com.tw 並全面升級 Google Gemini 最新旗艦模型
+- **移除失效平台模型**：徹底移除不穩定的 `nen.com.tw` / `deepseek-v4-flash` 預設依賴。
+- **全面升級主要與備用模型**：
+  - 預設 LLM 與 Fallback 全面切換為 Google Gemini 最新模型 `models/gemini-flash-latest`（汰換 `gemini-2.5-flash`）。
+  - 設定指定 Google Gemini 專用權杖 `your_gemini_api_key_here`。
+  - 端點統一走 OpenAI 相容協議 `https://generativelanguage.googleapis.com/v1beta/openai/`，大幅提升 14 位分析師與投資圓桌會議推論之產出速度與雙語結構穩定度。
+- **更新核心設定與代碼**：
+  - [src/llm/models.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/llm/models.py)：更新 `AVAILABLE_MODELS`、`get_model()` 與 `get_fallback_model()` 預設為 `models/gemini-flash-latest`。
+  - [src/utils/llm.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/utils/llm.py)：`call_llm` 與安全降級邏輯更新。
+  - [webui2.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/webui2.py) & [src/main.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/main.py)：預設模型與供應商全面切換為 `models/gemini-flash-latest` / `Gemini`。
+  - [AGENTS.md](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/AGENTS.md) & [.env.example](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/.env.example)：同步更新開發規範與環境變數範本。
+
+---
+
 ## 🚀 [v2.1.1] - 2026-08-29
 
 ### 🔑 1. 修復 LLM 憑證過期與多級容錯降級機制 (解決分析師 Agent 中性 0% 無反應問題)

@@ -203,7 +203,7 @@ Return a strictly valid JSON object matching this schema:
             raw_res = llm.invoke(messages)
         except Exception as primary_err:
             from llm.models import get_fallback_model
-            fallback_model_name = os.getenv("FALLBACK_MODEL", "gemini-2.5-flash")
+            fallback_model_name = os.getenv("FALLBACK_MODEL", "models/gemini-flash-latest")
             logger.warning(f"[RoundTable] Primary LLM failed: {primary_err}. Falling back to ({fallback_model_name})...")
             try:
                 fallback_llm = get_fallback_model(fallback_model_name)

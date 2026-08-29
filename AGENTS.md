@@ -14,7 +14,7 @@ This document is the authoritative **Developer & System Architecture Guide** for
 - **Web API & WebSockets**: Flask, `flask-cors`, `flask-sock` (running by default on port `6000`).
 - **Data Validation & Schemas**: `pydantic` (v2.x).
 - **Live Search & Scraping**: `2md` series (`2md.aiurl.tw`, `2md.glsoft.ai`, `create360.ai`).
-- **LLM Engine**: Primary `deepseek-v4-flash` (`https://nen.com.tw/v1/`) with seamless automatic failover to official OpenAI ChatGPT (`gpt-4o`).
+- **LLM Engine**: Primary `models/gemini-flash-latest` (`Gemini` via `https://generativelanguage.googleapis.com/v1beta/openai/`) with seamless automatic failover.
 
 ---
 
@@ -63,7 +63,7 @@ ai-hedge-fund-API/
     ├── llm/
     │   └── models.py         # LLM model registry & provider factory
     └── utils/
-        ├── llm.py            # call_llm() with automatic retry & ChatGPT failover
+        ├── llm.py            # call_llm() with automatic retry & fallback
         └── progress.py       # Progress bar tracking for terminal & WebSockets
 ```
 
@@ -93,17 +93,17 @@ graph TD
 All LLM calls in the codebase MUST be resilient against upstream provider outages.
 
 1. **Primary Model**:
-   - Provider: `OpenAI-Compatible`
-   - Base URL: `PRIMARY_BASE_URL` or `OPENAI_BASE_URL` (Default: `https://nen.com.tw/v1`)
-   - Model: `deepseek-v4-flash`
-   - Key: `PRIMARY_API_KEY` or `OPENAI_API_KEY`
-2. **Automatic Failover Model (ChatGPT)**:
-   - Base URL: `https://api.openai.com/v1`
-   - Model: `gpt-4o`
-   - Key: `FALLBACK_API_KEY` or `OPENAI_API_KEY`
+   - Provider: `Gemini`
+   - Base URL: `https://generativelanguage.googleapis.com/v1beta/openai/`
+   - Model: `models/gemini-flash-latest` (or `gemini-flash-latest`)
+   - Key: `GEMINI_API_KEY` or `FALLBACK_API_KEY` (`your_gemini_api_key_here`)
+2. **Automatic Failover Model**:
+   - Base URL: `FALLBACK_BASE_URL` (Default: `https://generativelanguage.googleapis.com/v1beta/openai/`)
+   - Model: `FALLBACK_MODEL` (Default: `models/gemini-flash-latest`)
+   - Key: `FALLBACK_API_KEY` or `GEMINI_API_KEY`
 3. **Execution Rule**:
    - When calling LLMs inside agents, use `call_llm(...)` located in [src/utils/llm.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/utils/llm.py).
-   - `call_llm` automatically catches errors from the primary provider, logs a warning, and immediately completes the prompt using the official ChatGPT fallback.
+   - `call_llm` automatically catches errors from the primary provider, logs a warning, and immediately completes the prompt using the fallback model.
 
 ---
 

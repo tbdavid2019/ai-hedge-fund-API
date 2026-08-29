@@ -55,9 +55,9 @@ def call_llm(
     # Inject bilingual English & Traditional Chinese instruction
     prompt = inject_bilingual_instruction(prompt)
 
-    # 1. Attempt Primary LLM Model (deepseek-v4-flash via nen.com.tw)
-    model_name = model_name or "deepseek-v4-flash"
-    model_provider = model_provider or "OpenAI-Compatible"
+    # 1. Attempt Primary LLM Model (models/gemini-flash-latest via Gemini)
+    model_name = model_name or os.getenv("DEFAULT_MODEL", "models/gemini-flash-latest")
+    model_provider = model_provider or os.getenv("DEFAULT_MODEL_PROVIDER", "Gemini")
     model_info = get_model_info(model_name)
 
     try:
@@ -92,7 +92,7 @@ def call_llm(
                     raise e
                     
     except Exception as primary_err:
-        fallback_model_name = os.getenv("FALLBACK_MODEL", "gemini-2.5-flash")
+        fallback_model_name = os.getenv("FALLBACK_MODEL", "models/gemini-flash-latest")
         print(f"[LLM Warning] Primary model '{model_name}' failed: {primary_err}. Activating fallback ({fallback_model_name})...")
         if agent_name:
             progress.update_status(agent_name, None, f"Falling back to {fallback_model_name}")

@@ -36,14 +36,34 @@ class LLMModel(BaseModel):
 AVAILABLE_MODELS = [
     # Primary default model
     LLMModel(
-        display_name="[nen.com.tw] deepseek-v4-flash (Primary Default)",
-        model_name="deepseek-v4-flash",
-        provider=ModelProvider.OPENAI_COMPATIBLE
+        display_name="[gemini] models/gemini-flash-latest (Primary Default)",
+        model_name="models/gemini-flash-latest",
+        provider=ModelProvider.GEMINI
+    ),
+    LLMModel(
+        display_name="[gemini] gemini-flash-latest",
+        model_name="gemini-flash-latest",
+        provider=ModelProvider.GEMINI
+    ),
+    LLMModel(
+        display_name="[gemini] gemini-2.0-flash",
+        model_name="gemini-2.0-flash",
+        provider=ModelProvider.GEMINI
+    ),
+    LLMModel(
+        display_name="[gemini] gemini-2.0-pro-exp",
+        model_name="gemini-2.0-pro-exp-02-05",
+        provider=ModelProvider.GEMINI
+    ),
+    LLMModel(
+        display_name="[gemini] gemini-1.5-pro",
+        model_name="gemini-1.5-pro",
+        provider=ModelProvider.GEMINI
     ),
 
     # OpenAI Models
     LLMModel(
-        display_name="[openai] gpt-4o (Fallback)",
+        display_name="[openai] gpt-4o",
         model_name="gpt-4o",
         provider=ModelProvider.OPENAI
     ),
@@ -85,23 +105,6 @@ AVAILABLE_MODELS = [
         provider=ModelProvider.ANTHROPIC
     ),
 
-    # Gemini Models
-    LLMModel(
-        display_name="[gemini] gemini-2.0-flash",
-        model_name="gemini-2.0-flash",
-        provider=ModelProvider.GEMINI
-    ),
-    LLMModel(
-        display_name="[gemini] gemini-2.0-pro-exp",
-        model_name="gemini-2.0-pro-exp-02-05",
-        provider=ModelProvider.GEMINI
-    ),
-    LLMModel(
-        display_name="[gemini] gemini-1.5-pro",
-        model_name="gemini-1.5-pro",
-        provider=ModelProvider.GEMINI
-    ),
-
     # DeepSeek Native
     LLMModel(
         display_name="[deepseek] deepseek-chat (V3)",
@@ -139,10 +142,10 @@ def get_model_info(model_name: str) -> Optional[LLMModel]:
 def get_model(model_name: str = None, model_provider: ModelProvider = None) -> Any:
     """
     Instantiate Chat LLM model.
-    Defaults to Primary Model (deepseek-v4-flash via https://nen.com.tw/v1/).
+    Defaults to Primary Model (models/gemini-flash-latest via Gemini).
     """
     if not model_name:
-        model_name = os.getenv("DEFAULT_MODEL", "deepseek-v4-flash")
+        model_name = os.getenv("DEFAULT_MODEL", "models/gemini-flash-latest")
     
     # Auto-detect provider if model matches known signatures
     if isinstance(model_provider, str):
@@ -151,9 +154,9 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
         except Exception:
             pass
 
-    if model_name == "deepseek-v4-flash" or (model_provider == ModelProvider.OPENAI_COMPATIBLE and "nen" in os.getenv("OPENAI_BASE_URL", "https://nen.com.tw/v1")):
-        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("NEN_API_KEY") or os.getenv("OPENAI_API_KEY", "your_primary_api_key_here")
-        base_url = os.getenv("PRIMARY_BASE_URL") or os.getenv("OPENAI_BASE_URL", "https://nen.com.tw/v1")
+    if model_provider == ModelProvider.GEMINI or "gemini" in model_name.lower():
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("FALLBACK_API_KEY") or "your_gemini_api_key_here"
+        base_url = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
         return ChatOpenAI(
             model=model_name,
             api_key=api_key,
@@ -173,10 +176,6 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
             raise ValueError("OpenAI API key not found. Please set OPENAI_API_KEY in .env file.")
         
         base_url = os.getenv("FALLBACK_BASE_URL") or os.getenv("OPENAI_BASE_URL")
-        # If base_url is nen.com.tw but model is gpt-4o, use official openai base url
-        if base_url and "nen.com.tw" in base_url and model_name.startswith("gpt-"):
-            base_url = "https://api.openai.com/v1"
-            
         if base_url:
             return ChatOpenAI(model=model_name, api_key=api_key, base_url=base_url)
         return ChatOpenAI(model=model_name, api_key=api_key)
@@ -186,17 +185,6 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
         if not api_key:
             raise ValueError("Anthropic API key not found. Please set ANTHROPIC_API_KEY in .env file.")
         return ChatAnthropic(model=model_name, api_key=api_key)
-
-    elif model_provider == ModelProvider.GEMINI:
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("Gemini API key not found. Please set GEMINI_API_KEY in .env file.")
-        
-        return ChatOpenAI(
-            api_key=api_key,
-            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-            model=model_name
-        )
 
     elif model_provider == ModelProvider.DEEPSEEK:
         api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY")
@@ -209,30 +197,28 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
         )
 
     elif model_provider == ModelProvider.OPENAI_COMPATIBLE:
-        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("CUSTOM_API_KEY") or os.getenv("OPENAI_API_KEY", "your_primary_api_key_here")
-        base_url = os.getenv("PRIMARY_BASE_URL") or os.getenv("CUSTOM_BASE_URL") or os.getenv("OPENAI_BASE_URL", "https://nen.com.tw/v1")
+        api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("CUSTOM_API_KEY") or os.getenv("GEMINI_API_KEY") or "your_gemini_api_key_here"
+        base_url = os.getenv("PRIMARY_BASE_URL") or os.getenv("CUSTOM_BASE_URL") or "https://generativelanguage.googleapis.com/v1beta/openai/"
         return ChatOpenAI(
             api_key=api_key,
             base_url=base_url,
             model=model_name
         )
 
-    # Fallback to OpenAI
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError(f"Unknown provider {model_provider} and no OPENAI_API_KEY found.")
-    return ChatOpenAI(model=model_name, api_key=api_key)
+    # Fallback
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("FALLBACK_API_KEY") or os.getenv("OPENAI_API_KEY") or "your_gemini_api_key_here"
+    base_url = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+    return ChatOpenAI(model=model_name, api_key=api_key, base_url=base_url)
 
 
 def get_fallback_model(fallback_model_name: Optional[str] = None) -> Any:
     """Get fallback model instance with custom fallback URL and model support"""
-    fallback_model_name = fallback_model_name or os.getenv("FALLBACK_MODEL", "gemini-2.5-flash")
+    fallback_model_name = fallback_model_name or os.getenv("FALLBACK_MODEL", "models/gemini-flash-latest")
     base_url = os.getenv("FALLBACK_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
-    api_key = os.getenv("FALLBACK_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("Fallback API key not found.")
+    api_key = os.getenv("FALLBACK_API_KEY") or os.getenv("GEMINI_API_KEY") or "your_gemini_api_key_here"
     return ChatOpenAI(
         model=fallback_model_name,
         api_key=api_key,
-        base_url=base_url
+        base_url=base_url,
+        temperature=0.2
     )
