@@ -46,14 +46,19 @@ def _format_ticker_for_yfinance(ticker: str) -> str:
         
     Returns:
         格式化後的股票代號
-        
-    Examples:
-        - 台股: "2330" -> "2330.TW"
-        - 港股: "0001.hk" -> "0001.HK", "1" -> "0001.HK"
-        - 中國股市: "600519" -> "600519.SS", "000001" -> "000001.SZ"
-        - 美股: "AAPL" -> "AAPL" (不變)
-        - 已有後綴: "AAPL.US" -> "AAPL.US" (不變)
     """
+    known_tickers = {
+        "SPACEX": "SPCX",
+        "SPACE X": "SPCX",
+        "SPCX": "SPCX",
+        "太空探索": "SPCX",
+        "TSMC": "2330.TW",
+        "台積電": "2330.TW"
+    }
+    clean = ticker.upper().strip()
+    if clean in known_tickers:
+        return known_tickers[clean]
+
     # 如果已經包含點號，直接使用（但處理港股的特殊情況）
     if '.' in ticker:
         if ticker.lower().endswith('.hk'):
