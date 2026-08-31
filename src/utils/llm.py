@@ -1,5 +1,6 @@
 """Helper functions for LLM with automatic retry and ChatGPT fallback"""
 
+import os
 import json
 from typing import TypeVar, Type, Optional, Any
 from pydantic import BaseModel
