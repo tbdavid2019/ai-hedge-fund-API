@@ -72,18 +72,20 @@ def infer_model_provider(model_name: str, specified_provider: str = None) -> str
         return specified_provider
     
     if not model_name or str(model_name).lower() in ["auto", "deepseek-v4-flash", "default", "none", ""]:
-        return os.getenv("DEFAULT_MODEL_PROVIDER", "Gemini")
+        return os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
     
     name = model_name.lower()
-    if "claude" in name:
+    if "gpt-oss" in name or "groq" in name:
+        return "Groq"
+    elif "claude" in name:
         return "Anthropic"
     elif "gemini" in name:
         return "Gemini"
-    elif "llama" in name or "groq" in name:
-        return "Groq"
     elif "deepseek" in name:
         return "DeepSeek"
-    return os.getenv("DEFAULT_MODEL_PROVIDER", "Gemini")
+    elif "gpt" in name or "o1" in name or "o3" in name:
+        return "OpenAI"
+    return os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
 
 
 def send_discord_notification(tickers, result, analysis_date):
