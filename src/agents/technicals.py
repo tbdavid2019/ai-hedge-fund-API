@@ -6,6 +6,7 @@ from langchain_core.messages import HumanMessage
 from graph.state import AgentState, show_agent_reasoning
 from tools.api import get_prices, prices_to_df
 from utils.progress import progress
+from src.quant.technicals import calculate_amihud_illiquidity, calculate_atr_dynamic_stops
 
 
 def safe_float(val, default=0.0):
@@ -30,6 +31,7 @@ def technical_analyst_agent(state: AgentState):
     3. Momentum
     4. Volatility Analysis
     5. Statistical Arbitrage Signals
+    6. Amihud Liquidity Impact & ATR Dynamic Stops
     """
     data = state["data"]
     start_date = data["start_date"]
@@ -71,6 +73,10 @@ def technical_analyst_agent(state: AgentState):
         progress.update_status("technical_analyst_agent", ticker, "Statistical analysis")
         stat_arb_signals = calculate_stat_arb_signals(prices_df)
 
+        progress.update_status("technical_analyst_agent", ticker, "Calculating liquidity & dynamic stops")
+        amihud_metrics = calculate_amihud_illiquidity(prices_df)
+        atr_metrics = calculate_atr_dynamic_stops(prices_df)
+
         # Combine all signals using a weighted ensemble approach
         strategy_weights = {
             "trend": 0.25,
@@ -96,6 +102,14 @@ def technical_analyst_agent(state: AgentState):
         technical_analysis[ticker] = {
             "signal": combined_signal["signal"],
             "confidence": round(combined_signal["confidence"] * 100),
+            "quant_technicals": {
+                "amihud_illiquidity": amihud_metrics.get("amihud_illiquidity_ratio"),
+                "liquidity_tier": amihud_metrics.get("liquidity_tier"),
+                "atr_14": atr_metrics.get("atr_14"),
+                "trailing_stop_long": atr_metrics.get("trailing_stop_long"),
+                "trailing_stop_short": atr_metrics.get("trailing_stop_short"),
+                "stop_distance_pct": atr_metrics.get("stop_distance_pct"),
+            },
             "strategy_signals": {
                 "trend_following": {
                     "signal": trend_signals["signal"],
@@ -122,6 +136,11 @@ def technical_analyst_agent(state: AgentState):
                     "confidence": round(stat_arb_signals["confidence"] * 100),
                     "metrics": normalize_pandas(stat_arb_signals["metrics"]),
                 },
+                "liquidity_and_risk": {
+                    "liquidity_tier": amihud_metrics.get("liquidity_tier"),
+                    "trailing_stop_long": atr_metrics.get("trailing_stop_long"),
+                    "trailing_stop_short": atr_metrics.get("trailing_stop_short"),
+                }
             },
         }
         progress.update_status("technical_analyst_agent", ticker, "Done")

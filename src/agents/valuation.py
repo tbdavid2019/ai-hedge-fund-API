@@ -3,38 +3,47 @@ from graph.state import AgentState, show_agent_reasoning
 from utils.progress import progress
 import json
 
-from tools.api import get_financial_metrics, get_market_cap, search_line_items
+from tools.api import get_financial_metrics, get_market_cap, search_line_items, get_prices, prices_to_df
+from src.quant.valuation import (
+    calculate_dcf_sensitivity,
+    calculate_altman_z_score,
+    calculate_piotroski_f_score,
+)
 
 
 ##### Valuation Agent #####
 def valuation_agent(state: AgentState):
-    """Performs detailed valuation analysis using multiple methodologies for multiple tickers."""
+    """
+    Performs institutional quantitative valuation analysis:
+    1. DCF 5x5 Sensitivity Analysis Matrix (WACC vs Terminal Growth)
+    2. Buffett Owner Earnings Intrinsic Valuation
+    3. Altman Z-Score Bankruptcy / Financial Distress Risk
+    4. Piotroski F-Score (0-9) Fundamental Improvement Metric
+    """
     data = state["data"]
     end_date = data["end_date"]
+    start_date = data["start_date"]
     tickers = data["tickers"]
 
-    # Initialize valuation analysis for each ticker
     valuation_analysis = {}
 
     for ticker in tickers:
-        progress.update_status("valuation_agent", ticker, "Fetching financial data")
+        progress.update_status("valuation_agent", ticker, "Fetching financial metrics and statements")
 
-        # Fetch the financial metrics
         financial_metrics = get_financial_metrics(
             ticker=ticker,
             end_date=end_date,
             period="ttm",
         )
 
-        # Add safety check for financial metrics
         if not financial_metrics:
             progress.update_status("valuation_agent", ticker, "Failed: No financial metrics found")
             continue
-        
-        metrics = financial_metrics[0]
 
-        progress.update_status("valuation_agent", ticker, "Gathering line items")
-        # Fetch the specific line_items that we need for valuation purposes
+        metrics = financial_metrics[0]
+        prev_metrics = financial_metrics[1] if len(financial_metrics) > 1 else None
+
+        progress.update_status("valuation_agent", ticker, "Gathering detailed financial statement items")
         financial_line_items = search_line_items(
             ticker=ticker,
             line_items=[
@@ -43,88 +52,143 @@ def valuation_agent(state: AgentState):
                 "depreciation_and_amortization",
                 "capital_expenditure",
                 "working_capital",
+                "total_assets",
+                "total_liabilities",
+                "retained_earnings",
+                "operating_income",
+                "total_revenue",
             ],
             end_date=end_date,
             period="ttm",
             limit=2,
         )
 
-        # Add safety check for financial line items
-        if len(financial_line_items) < 2:
-            progress.update_status("valuation_agent", ticker, "Failed: Insufficient financial line items")
-            continue
+        current_item = financial_line_items[0] if financial_line_items else None
+        prev_item = financial_line_items[1] if len(financial_line_items) > 1 else None
 
-        # Pull the current and previous financial line items
-        current_financial_line_item = financial_line_items[0]
-        previous_financial_line_item = financial_line_items[1]
+        # 獲取當前股價與市值
+        market_cap = get_market_cap(ticker=ticker, end_date=end_date) or 1.0
+        prices = get_prices(ticker=ticker, start_date=start_date, end_date=end_date)
+        prices_df = prices_to_df(prices) if prices else None
+        current_price = float(prices_df["close"].dropna().iloc[-1]) if (prices_df is not None and not prices_df.empty and "close" in prices_df.columns) else 100.0
 
-        progress.update_status("valuation_agent", ticker, "Calculating owner earnings")
-        # Safely check for working_capital attribute
-        if (hasattr(current_financial_line_item, 'working_capital') and 
-            hasattr(previous_financial_line_item, 'working_capital') and
-            current_financial_line_item.working_capital is not None and 
-            previous_financial_line_item.working_capital is not None):
-            
-            working_capital_change = current_financial_line_item.working_capital - previous_financial_line_item.working_capital
-        else:
-            # Default to zero if working_capital attribute is not available
-            working_capital_change = 0
-            progress.update_status("valuation_agent", ticker, "Note: Working capital data not available")
+        progress.update_status("valuation_agent", ticker, "Computing Owner Earnings & DCF Sensitivity Matrix")
 
-        # Owner Earnings Valuation (Buffett Method)
+        # 1. 計算營運資金變動與 Owner Earnings (巴菲特法)
+        working_capital_change = 0.0
+        if current_item and prev_item:
+            curr_wc = getattr(current_item, "working_capital", None)
+            prev_wc = getattr(prev_item, "working_capital", None)
+            if curr_wc is not None and prev_wc is not None:
+                working_capital_change = curr_wc - prev_wc
+
+        net_income = getattr(current_item, "net_income", None) or getattr(metrics, "net_income", 0.0) or 0.0
+        deprec = getattr(current_item, "depreciation_and_amortization", None) or 0.0
+        capex = getattr(current_item, "capital_expenditure", None) or 0.0
+        fcf = getattr(current_item, "free_cash_flow", None) or getattr(metrics, "free_cash_flow", 0.0) or (net_income + deprec - capex)
+
         owner_earnings_value = calculate_owner_earnings_value(
-            net_income=current_financial_line_item.net_income,
-            depreciation=current_financial_line_item.depreciation_and_amortization,
-            capex=current_financial_line_item.capital_expenditure,
+            net_income=net_income,
+            depreciation=deprec,
+            capex=capex,
             working_capital_change=working_capital_change,
-            growth_rate=metrics.earnings_growth,
+            growth_rate=getattr(metrics, "earnings_growth", 0.05) or 0.05,
             required_return=0.15,
             margin_of_safety=0.25,
         )
 
-        progress.update_status("valuation_agent", ticker, "Calculating DCF value")
-        # DCF Valuation
-        dcf_value = calculate_intrinsic_value(
-            free_cash_flow=getattr(current_financial_line_item, 'free_cash_flow', 0),
-            growth_rate=metrics.earnings_growth,
-            discount_rate=0.10,
-            terminal_growth_rate=0.03,
-            num_years=5,
+        # 2. DCF 5x5 敏感度矩陣
+        earnings_growth = getattr(metrics, "earnings_growth", 0.08) or 0.08
+        safe_growth = max(-0.20, min(0.30, float(earnings_growth)))
+        
+        dcf_result = calculate_dcf_sensitivity(
+            free_cash_flow=float(fcf),
+            current_price=float(current_price),
+            market_cap=float(market_cap),
+            base_wacc=0.10,
+            base_terminal_growth=0.025,
+            forecast_growth=safe_growth,
         )
 
-        progress.update_status("valuation_agent", ticker, "Comparing to market value")
-        # Get the market cap
-        market_cap = get_market_cap(ticker=ticker, end_date=end_date)
+        progress.update_status("valuation_agent", ticker, "Computing Altman Z-Score & Piotroski F-Score")
 
-        # Calculate combined valuation gap (average of both methods)
-        dcf_gap = (dcf_value - market_cap) / market_cap
-        owner_earnings_gap = (owner_earnings_value - market_cap) / market_cap
-        valuation_gap = (dcf_gap + owner_earnings_gap) / 2
+        # 3. Altman Z-Score
+        z_score_result = calculate_altman_z_score(
+            working_capital=getattr(current_item, "working_capital", None),
+            total_assets=getattr(current_item, "total_assets", None) or getattr(metrics, "total_assets", None),
+            retained_earnings=getattr(current_item, "retained_earnings", None),
+            ebit=getattr(current_item, "operating_income", None) or getattr(metrics, "operating_income", None),
+            market_cap=market_cap,
+            total_liabilities=getattr(current_item, "total_liabilities", None) or getattr(metrics, "total_liabilities", None),
+            total_revenue=getattr(current_item, "total_revenue", None) or getattr(metrics, "total_revenue", None),
+        )
 
-        if valuation_gap > 0.15:  # More than 15% undervalued
+        # 4. Piotroski F-Score
+        current_metric_dict = {
+            "net_income": net_income,
+            "return_on_assets": getattr(metrics, "return_on_assets", 0.0),
+            "operating_cash_flow": getattr(metrics, "operating_cash_flow", 0.0) or fcf,
+            "current_ratio": getattr(metrics, "current_ratio", 1.0),
+            "gross_margin": getattr(metrics, "gross_margin", 0.0),
+            "debt_to_equity": getattr(metrics, "debt_to_equity", 0.0),
+        }
+        prev_metric_dict = {
+            "current_ratio": getattr(prev_metrics, "current_ratio", 1.0) if prev_metrics else 1.0,
+            "gross_margin": getattr(prev_metrics, "gross_margin", 0.0) if prev_metrics else 0.0,
+            "debt_to_equity": getattr(prev_metrics, "debt_to_equity", 0.0) if prev_metrics else 0.0,
+        } if prev_metrics else None
+
+        f_score_result = calculate_piotroski_f_score(current_metric_dict, prev_metric_dict)
+
+        # 綜合多空信號與信心度計算
+        dcf_gap = (dcf_result.get("fair_value_median", current_price) - current_price) / current_price if current_price > 0 else 0.0
+        owner_gap = (owner_earnings_value - market_cap) / market_cap if market_cap > 0 else 0.0
+        composite_gap = (dcf_gap + owner_gap) / 2.0 if owner_earnings_value > 0 else dcf_gap
+
+        if composite_gap > 0.15:
             signal = "bullish"
-        elif valuation_gap < -0.15:  # More than 15% overvalued
+        elif composite_gap < -0.15:
             signal = "bearish"
         else:
             signal = "neutral"
 
-        # Create the reasoning
-        reasoning = {}
-        reasoning["dcf_analysis"] = {
-            "signal": ("bullish" if dcf_gap > 0.15 else "bearish" if dcf_gap < -0.15 else "neutral"),
-            "details": f"Intrinsic Value: ${dcf_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {dcf_gap:.1%}",
-        }
+        # 若 Z-Score 處於破產困境區，強行降級信號保護本金
+        if z_score_result.get("risk_level") == "High":
+            if signal == "bullish":
+                signal = "neutral"
+            elif signal == "neutral":
+                signal = "bearish"
 
-        reasoning["owner_earnings_analysis"] = {
-            "signal": ("bullish" if owner_earnings_gap > 0.15 else "bearish" if owner_earnings_gap < -0.15 else "neutral"),
-            "details": f"Owner Earnings Value: ${owner_earnings_value:,.2f}, Market Cap: ${market_cap:,.2f}, Gap: {owner_earnings_gap:.1%}",
-        }
+        confidence = round(min(100.0, max(20.0, abs(composite_gap) * 100.0)), 2)
 
-        confidence = round(abs(valuation_gap), 2) * 100
         valuation_analysis[ticker] = {
             "signal": signal,
             "confidence": confidence,
-            "reasoning": reasoning,
+            "quant_valuation": {
+                "dcf_fair_value_median": dcf_result.get("fair_value_median"),
+                "dcf_fair_value_range": dcf_result.get("fair_value_range"),
+                "margin_of_safety_pct": dcf_result.get("margin_of_safety_pct"),
+                "dcf_valuation_status": dcf_result.get("valuation_status"),
+                "altman_z_score": z_score_result.get("z_score"),
+                "altman_zone": z_score_result.get("zone"),
+                "altman_risk_level": z_score_result.get("risk_level"),
+                "piotroski_f_score": f_score_result.get("f_score"),
+                "piotroski_assessment": f_score_result.get("assessment"),
+            },
+            "reasoning": {
+                "dcf_analysis": {
+                    "signal": "bullish" if dcf_gap > 0.15 else "bearish" if dcf_gap < -0.15 else "neutral",
+                    "details": f"DCF Median Fair Value: ${dcf_result.get('fair_value_median', 0):,.2f} vs Current Price: ${current_price:,.2f} (Margin of Safety: {dcf_result.get('margin_of_safety_pct', 0)}%)",
+                },
+                "owner_earnings_analysis": {
+                    "signal": "bullish" if owner_gap > 0.15 else "bearish" if owner_gap < -0.15 else "neutral",
+                    "details": f"Owner Earnings Intrinsic Value: ${owner_earnings_value:,.2f} vs Market Cap: ${market_cap:,.2f}",
+                },
+                "financial_health_audit": {
+                    "altman_z_score": f"{z_score_result.get('z_score')} ({z_score_result.get('zone')})",
+                    "piotroski_f_score": f"{f_score_result.get('f_score')}/9 ({f_score_result.get('assessment')})",
+                },
+            },
         }
 
         progress.update_status("valuation_agent", ticker, "Done")
@@ -134,11 +198,9 @@ def valuation_agent(state: AgentState):
         name="valuation_agent",
     )
 
-    # Print the reasoning if the flag is set
     if state["metadata"]["show_reasoning"]:
         show_agent_reasoning(valuation_analysis, "Valuation Analysis Agent")
 
-    # Add the signal to the analyst_signals list
     state["data"]["analyst_signals"]["valuation_agent"] = valuation_analysis
 
     return {
@@ -157,119 +219,24 @@ def calculate_owner_earnings_value(
     margin_of_safety: float = 0.25,
     num_years: int = 5,
 ) -> float:
-    """
-    Calculates the intrinsic value using Buffett's Owner Earnings method.
-
-    Owner Earnings = Net Income
-                    + Depreciation/Amortization
-                    - Capital Expenditures
-                    - Working Capital Changes
-
-    Args:
-        net_income: Annual net income
-        depreciation: Annual depreciation and amortization
-        capex: Annual capital expenditures
-        working_capital_change: Annual change in working capital
-        growth_rate: Expected growth rate
-        required_return: Required rate of return (Buffett typically uses 15%)
-        margin_of_safety: Margin of safety to apply to final value
-        num_years: Number of years to project
-
-    Returns:
-        float: Intrinsic value with margin of safety
-    """
+    """Calculates intrinsic value using Buffett's Owner Earnings method."""
     if not all([isinstance(x, (int, float)) for x in [net_income, depreciation, capex, working_capital_change]]):
-        return 0
+        return 0.0
 
-    # Calculate initial owner earnings
     owner_earnings = net_income + depreciation - capex - working_capital_change
-
     if owner_earnings <= 0:
-        return 0
-        
-    # Ensure growth_rate is not None
-    if growth_rate is None:
-        growth_rate = 0.05  # Use a default 5% growth rate
+        return 0.0
 
-    # Project future owner earnings
+    growth_rate = growth_rate if growth_rate is not None else 0.05
     future_values = []
     for year in range(1, num_years + 1):
         future_value = owner_earnings * (1 + growth_rate) ** year
         discounted_value = future_value / (1 + required_return) ** year
         future_values.append(discounted_value)
 
-    # Calculate terminal value (using perpetuity growth formula)
-    terminal_growth = min(growth_rate, 0.03)  # Cap terminal growth at 3%
+    terminal_growth = min(growth_rate, 0.03)
     terminal_value = (future_values[-1] * (1 + terminal_growth)) / (required_return - terminal_growth)
     terminal_value_discounted = terminal_value / (1 + required_return) ** num_years
 
-    # Sum all values and apply margin of safety
     intrinsic_value = sum(future_values) + terminal_value_discounted
-    value_with_safety_margin = intrinsic_value * (1 - margin_of_safety)
-
-    return value_with_safety_margin
-
-
-def calculate_intrinsic_value(
-    free_cash_flow: float,
-    growth_rate: float = 0.05,
-    discount_rate: float = 0.10,
-    terminal_growth_rate: float = 0.02,
-    num_years: int = 5,
-) -> float:
-    """
-    Computes the discounted cash flow (DCF) for a given company based on the current free cash flow.
-    Use this function to calculate the intrinsic value of a stock.
-    """
-    # Check if free_cash_flow is valid
-    if free_cash_flow is None or not isinstance(free_cash_flow, (int, float)):
-        return 0
-        
-    # Ensure growth_rate is not None
-    if growth_rate is None:
-        growth_rate = 0.05  # Default to 5% growth
-        
-    # Ensure terminal_growth_rate is not None
-    if terminal_growth_rate is None:
-        terminal_growth_rate = 0.02  # Default to 2% terminal growth
-        
-    # Ensure discount_rate is not None
-    if discount_rate is None:
-        discount_rate = 0.10  # Default to 10% discount rate
-    
-    # Estimate the future cash flows based on the growth rate
-    cash_flows = [free_cash_flow * (1 + growth_rate) ** i for i in range(num_years)]
-
-    # Calculate the present value of projected cash flows
-    present_values = []
-    for i in range(num_years):
-        present_value = cash_flows[i] / (1 + discount_rate) ** (i + 1)
-        present_values.append(present_value)
-
-    # Calculate the terminal value
-    terminal_value = cash_flows[-1] * (1 + terminal_growth_rate) / (discount_rate - terminal_growth_rate)
-    terminal_present_value = terminal_value / (1 + discount_rate) ** num_years
-
-    # Sum up the present values and terminal value
-    dcf_value = sum(present_values) + terminal_present_value
-
-    return dcf_value
-
-
-def calculate_working_capital_change(
-    current_working_capital: float,
-    previous_working_capital: float,
-) -> float:
-    """
-    Calculate the absolute change in working capital between two periods.
-    A positive change means more capital is tied up in working capital (cash outflow).
-    A negative change means less capital is tied up (cash inflow).
-
-    Args:
-        current_working_capital: Current period's working capital
-        previous_working_capital: Previous period's working capital
-
-    Returns:
-        float: Change in working capital (current - previous)
-    """
-    return current_working_capital - previous_working_capital
+    return intrinsic_value * (1 - margin_of_safety)

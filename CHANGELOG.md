@@ -4,6 +4,28 @@
 
 ---
 
+## 🚀 [v2.3.0] - 2026-08-31
+
+### 🧮 1. 注入機構級 Quant 金融數學層 (QuantLib) 增強分析師客觀決策
+- **建立量化核心庫 (`src/quant/`)**：
+  - `src/quant/risk.py`: 實作歷史模擬法與參數法 95%/99% VaR (Value at Risk)、CVaR (Expected Shortfall)、實現波動度體制判定、最大回撤 (MDD) 與動態風險預算部位控管 (2% 淨值停損上限)。
+  - `src/quant/valuation.py`: 實作 5×5 DCF 敏感度分析矩陣 (WACC vs. 永續成長率)、Altman Z-Score 破產風險預警模型、Piotroski F-Score (0~9 分) 財務體質健全度評級。
+  - `src/quant/technicals.py`: 實作 Amihud (2002) 非流動性衝擊指標 (Illiquidity Ratio) 與 ATR Chandelier 動態吊燈停損位計算。
+- **全面升級核心 Agent**：
+  - [src/agents/risk_manager.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/risk_manager.py): 升級為基於 CVaR 極端風險預算與波動率逆權重 (Volatility Parity) 計算動態安全下單上限，杜絕高波動標的重創投資組合。
+  - [src/agents/valuation.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/valuation.py): 結合 DCF 敏感度矩陣、Altman Z-Score 與 Piotroski F-Score，在財務困境時強制降級多頭信號。
+  - [src/agents/technicals.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/technicals.py): 整合 Amihud 流動性層級與 ATR 吊燈動態停損。
+- **單元測試驗證**：
+  - 於 [tests/test_quant.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/tests/test_quant.py) 建立完整測試套件，100% 通過驗證。
+
+### 🔌 2. 支援標準 MCP (Model Context Protocol) 伺服器
+- **新增 [mcp_server.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/mcp_server.py)**：
+  - 基於 `FastMCP` 開發標準 MCP Server，完美整合 Cursor、Claude Desktop、Windsurf 與 Antigravity。
+  - **Tool 1: `analyze_stock_with_committee`**: 讓外部 IDE/客戶端一鍵召集 14 位傳奇大師進行多輪圓桌辯論與投資決策。
+  - **Tool 2: `get_stock_quant_audit`**: 免 LLM 亞秒級計算任何美股/台股/港股/加密貨幣之完整量化風控與估值審計報告。
+
+---
+
 ## 🚀 [v2.2.3] - 2026-08-29
 
 ### 🛡️ 1. 全域 Antigravity 規則部署與跨語言多技術棧安全鐵律 (Multi-Stack Iron Rules)
