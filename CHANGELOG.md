@@ -4,6 +4,20 @@
 
 ---
 
+## 🚀 [v2.3.1] - 2026-09-01
+
+### 🗼 1. 全自動 yfinance 巡檢、GitHub Actions CI/CD 與遠端 Watchtower 熱部署閉環
+- **GitHub Actions 自動化排程工作流**：
+  - 新增 [`.github/workflows/yfinance-auto-update.yml`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/.github/workflows/yfinance-auto-update.yml)：每 6 小時自動對 PyPI 官方 API 巡檢 `yfinance` 最新版本。
+  - 當檢測到 PyPI 有新版本發布（或手動觸發 / Push 主分支）時，自動執行 `docker build --no-cache` 確保拉取最新無快取之依賴，並自動推送至 Docker Hub (`tbdavid2019/ai-hedge-fund-api:latest`)。
+  - 自動回寫並提交版本追蹤檔 [`yfinance.version`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/yfinance.version)。
+- **升級巡檢模組 ([`scripts/check_and_update_yfinance.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/scripts/check_and_update_yfinance.py))**：
+  - 增加 `--version-file` 與 `$GITHUB_OUTPUT` 支援，實現 CI/CD 執行環境的無狀態確定性比對。
+- **遠端 Watchtower 自動感知與零停機熱重啟**：
+  - 伺服器容器帶有 `com.centurylinklabs.watchtower.enable=true` 標籤，Watchtower 守護容器會在 Docker Hub 映像更新後自動拉取最新映像並熱重啟 `nice_jemison`，達成 100% 零人工介入之長效維護。
+
+---
+
 ## 🚀 [v2.3.0] - 2026-08-31
 
 ### 🧮 1. 注入機構級 Quant 金融數學層 (QuantLib) 增強分析師客觀決策

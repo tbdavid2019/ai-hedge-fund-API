@@ -1,0 +1,93 @@
+name: 🚀 Autonomous yfinance Update & Docker CI/CD
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Runs every 6 hours automatically
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild and push Docker image regardless of version'
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'yfinance.version'
+
+jobs:
+  check-and-build:
+    name: 🔍 Check PyPI & Build Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Install Checker Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install packaging
+
+      - name: 🔍 Check yfinance on PyPI vs Repository Version
+        id: check_yfinance
+        run: |
+          python3 scripts/check_and_update_yfinance.py --version-file yfinance.version --write-version || echo "Exit code: $?"
+
+      - name: 🏷️ Set Build Decision
+        id: build_decision
+        run: |
+          HAS_UPDATE="${{ steps.check_yfinance.outputs.has_update }}"
+          FORCE="${{ inputs.force_rebuild }}"
+          EVENT="${{ github.event_name }}"
+          
+          if [ "$HAS_UPDATE" = "true" ] || [ "$FORCE" = "true" ] || [ "$EVENT" = "push" ]; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "🚀 Build triggered! (has_update=$HAS_UPDATE, force=$FORCE, event=$EVENT)"
+          else
+            echo "should_build=false" >> $GITHUB_OUTPUT
+            echo "✨ yfinance is up to date (${{ steps.check_yfinance.outputs.current_version }}). No build needed."
+          fi
+
+      - name: 🐳 Set up Docker Buildx
+        if: steps.build_decision.outputs.should_build == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔑 Log in to Docker Hub
+        if: steps.build_decision.outputs.should_build == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 🛠️ Build and Push Docker Image (Fresh without cache)
+        if: steps.build_decision.outputs.should_build == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          no-cache: true
+          tags: |
+            tbdavid2019/ai-hedge-fund-api:latest
+            tbdavid2019/ai-hedge-fund-api:${{ steps.check_yfinance.outputs.latest_version }}
+
+      - name: 📝 Commit Updated yfinance.version (If Updated)
+        if: steps.check_yfinance.outputs.has_update == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add yfinance.version
+          git commit -m "chore(auto-update): bump yfinance version to ${{ steps.check_yfinance.outputs.latest_version }} [skip ci]" || echo "No changes to commit"
+          git push origin main || echo "Push failed or branch locked"
