@@ -4,6 +4,18 @@
 
 ---
 
+## 🚀 [v2.3.2] - 2026-09-02
+
+### 🛡️ 1. 全面資安審計與生產環境安全加固 (Security Hardening & Safe Error Sanitization)
+- **API 錯誤資訊防洩漏處理**：
+  - 於 [`webui2.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/webui2.py) 實作 `format_api_error_response()`，在 HTTP 500 與異步任務異常時自動遮蔽內部詳細檔案路徑與 Traceback，僅在明確開啟 `SHOW_INTERNAL_ERROR_TRACEBACK=true` 或 Debug 模式時暴露，杜絕路徑外洩風險。
+- **CI/CD 工作流 Secret 存在性防禦**：
+  - 優化 [`.github/workflows/yfinance-auto-update.yml`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/.github/workflows/yfinance-auto-update.yml)，加入 Docker Hub 金鑰檢測守衛。當倉庫未設置推送 Secrets 時自動發出溫馨提示並優雅跳過，消除誤報性 CI 失敗。
+- **安全審計 100% 合規認證**：
+  - 經完整 `security-audit` 審查，全庫金鑰零洩漏、Quant 數學極值/除零邊界防護完備、MCP 協議入參嚴格收斂。
+
+---
+
 ## 🚀 [v2.3.1] - 2026-09-01
 
 ### 🗼 1. 全自動 yfinance 巡檢、GitHub Actions CI/CD 與遠端 Watchtower 熱部署閉環

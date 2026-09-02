@@ -25,6 +25,21 @@ from src.llm.models import ModelProvider, get_model_info
 # 加載 .env 環境變數
 load_dotenv()
 
+# 生產環境資安設定：是否在 HTTP 500 回應中顯示內部詳細 Traceback（預設關閉以防資訊外洩）
+SHOW_INTERNAL_ERROR_TRACEBACK = (
+    os.environ.get("SHOW_INTERNAL_ERROR_TRACEBACK", "false").lower() == "true"
+    or os.environ.get("FLASK_DEBUG", "0") in ["1", "true", "True"]
+)
+
+
+def format_api_error_response(error: Exception) -> dict:
+    """產出安全且規範的 API 錯誤回應，防止在生產環境外洩內部檔案系統路徑與環境細節"""
+    resp = {"error": str(error)}
+    if SHOW_INTERNAL_ERROR_TRACEBACK:
+        resp["traceback"] = traceback.format_exc()
+    return resp
+
+
 # Discord Webhook 設定
 DISCORD_WEBHOOK_ENABLED = os.environ.get("DISCORD_WEBHOOK_ENABLED", "false").lower() == "true"
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
@@ -354,7 +369,8 @@ def execute_async_analysis_task(
                 analysis_tasks[task_id]["status"] = "failed"
                 analysis_tasks[task_id]["progress"] = f"分析失敗: {error_msg}"
                 analysis_tasks[task_id]["error"] = error_msg
-                analysis_tasks[task_id]["traceback"] = trace
+                if SHOW_INTERNAL_ERROR_TRACEBACK:
+                    analysis_tasks[task_id]["traceback"] = trace
                 analysis_tasks[task_id]["updated_at"] = datetime.utcnow().isoformat() + "Z"
 
 
@@ -472,7 +488,7 @@ def run_analysis():
     except Exception as e:
         error_message = f"API Error: {str(e)}"
         broadcast_log(error_message, "error")
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        return jsonify(format_api_error_response(e)), 500
 
 
 @app.route('/api/task/<task_id>', methods=['GET'])
@@ -529,7 +545,7 @@ def run_round_table_endpoint():
     except Exception as e:
         error_message = f"Round Table API Error: {str(e)}"
         broadcast_log(error_message, "error")
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        return jsonify(format_api_error_response(e)), 500
 
 
 @sock.route('/ws/logs')

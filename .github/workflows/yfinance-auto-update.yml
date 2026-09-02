@@ -47,12 +47,21 @@ jobs:
 
       - name: 🏷️ Set Build Decision
         id: build_decision
+        env:
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           HAS_UPDATE="${{ steps.check_yfinance.outputs.has_update }}"
           FORCE="${{ inputs.force_rebuild }}"
           EVENT="${{ github.event_name }}"
           
-          if [ "$HAS_UPDATE" = "true" ] || [ "$FORCE" = "true" ] || [ "$EVENT" = "push" ]; then
+          if [ -z "$DOCKERHUB_USER" ] || [ -z "$DOCKERHUB_PASS" ]; then
+            echo "⚠️ Notice: DOCKERHUB_USERNAME or DOCKERHUB_TOKEN secrets are not configured in GitHub Secrets. Skipping image push to Docker Hub."
+            echo "should_build=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          if [ "$HAS_UPDATE" = "true" ] || [ "$FORCE" = "true" ]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
             echo "🚀 Build triggered! (has_update=$HAS_UPDATE, force=$FORCE, event=$EVENT)"
           else
