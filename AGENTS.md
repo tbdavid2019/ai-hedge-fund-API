@@ -60,10 +60,14 @@ ai-hedge-fund-API/
 ├── skill.md                  # LLM Agent Skill specification (served at /skill.md & /)
 ├── ANALYSTS.md               # 14 Analyst investment philosophies & models
 ├── CHANGELOG.md              # Semantic version history
-├── data/                     # Offline-ready Stock Registries (~15,000+ listings)
-│   ├── us_stock_registry.json# US SEC EDGAR (10,407 stocks + Chinese aliases + SPCX)
+├── data/                     # Offline-ready Global Stock Registries (~32,000+ listings)
+│   ├── us_stock_registry.json# US SEC EDGAR (10,407 stocks: NASDAQ, NYSE, AMEX, ARCA, BATS, IEX + SPCX)
 │   ├── hk_stock_registry.json# HKEX (3,237 stocks + native Traditional Chinese names)
-│   └── tw_stock_registry.json# TWSE/TPEx (2,234 stocks with .TW and .TWO suffixes)
+│   ├── tw_stock_registry.json# TWSE/TPEx (2,234 stocks with .TW and .TWO suffixes)
+│   ├── cn_stock_registry.json# SSE/SZSE (8,099+ China A-Shares with .SS and .SZ suffixes)
+│   ├── jp_stock_registry.json# JPX Tokyo Stock Exchange (4,441 stocks with .T suffix)
+│   ├── eu_stock_registry.json# Euronext (3,638 European stocks with .PA, .AS, .BR, etc.)
+│   └── uk_stock_registry.json# LSE (London Stock Exchange with .L suffix)
 ├── scripts/
 │   └── update_stock_registries.py # Official registry auto-fetcher
 ├── static/

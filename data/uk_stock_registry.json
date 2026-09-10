@@ -1,0 +1,141 @@
+{
+  "updated_at": "2026-09-10",
+  "total": 17,
+  "stocks": {
+    "SHEL": {
+      "code": "SHEL",
+      "name": "Shell plc",
+      "ticker": "SHEL.L",
+      "market": "LSE"
+    },
+    "AZN": {
+      "code": "AZN",
+      "name": "AstraZeneca PLC",
+      "ticker": "AZN.L",
+      "market": "LSE"
+    },
+    "HSBA": {
+      "code": "HSBA",
+      "name": "HSBC Holdings plc",
+      "ticker": "HSBA.L",
+      "market": "LSE"
+    },
+    "ULVR": {
+      "code": "ULVR",
+      "name": "Unilever PLC",
+      "ticker": "ULVR.L",
+      "market": "LSE"
+    },
+    "BP": {
+      "code": "BP",
+      "name": "BP p.l.c.",
+      "ticker": "BP.L",
+      "market": "LSE"
+    },
+    "RIO": {
+      "code": "RIO",
+      "name": "Rio Tinto plc",
+      "ticker": "RIO.L",
+      "market": "LSE"
+    },
+    "GSK": {
+      "code": "GSK",
+      "name": "GSK plc",
+      "ticker": "GSK.L",
+      "market": "LSE"
+    },
+    "BATS": {
+      "code": "BATS",
+      "name": "British American Tobacco p.l.c.",
+      "ticker": "BATS.L",
+      "market": "LSE"
+    },
+    "DGE": {
+      "code": "DGE",
+      "name": "Diageo plc",
+      "ticker": "DGE.L",
+      "market": "LSE"
+    },
+    "REL": {
+      "code": "REL",
+      "name": "RELX PLC",
+      "ticker": "REL.L",
+      "market": "LSE"
+    },
+    "PRU": {
+      "code": "PRU",
+      "name": "Prudential plc",
+      "ticker": "PRU.L",
+      "market": "LSE"
+    },
+    "LLOY": {
+      "code": "LLOY",
+      "name": "Lloyds Banking Group plc",
+      "ticker": "LLOY.L",
+      "market": "LSE"
+    },
+    "BARC": {
+      "code": "BARC",
+      "name": "Barclays PLC",
+      "ticker": "BARC.L",
+      "market": "LSE"
+    },
+    "VOD": {
+      "code": "VOD",
+      "name": "Vodafone Group Plc",
+      "ticker": "VOD.L",
+      "market": "LSE"
+    },
+    "ARM": {
+      "code": "ARM",
+      "name": "Arm Holdings plc",
+      "ticker": "ARM.L",
+      "market": "LSE"
+    },
+    "BA": {
+      "code": "BA",
+      "name": "BAE Systems plc",
+      "ticker": "BA.L",
+      "market": "LSE"
+    },
+    "GLEN": {
+      "code": "GLEN",
+      "name": "Glencore plc",
+      "ticker": "GLEN.L",
+      "market": "LSE"
+    }
+  },
+  "aliases": {
+    "殼牌": "SHEL.L",
+    "阿斯利康": "AZN.L",
+    "匯豐倫敦": "HSBA.L",
+    "聯合利華": "ULVR.L",
+    "英國石油": "BP.L",
+    "力拓": "RIO.L",
+    "葛蘭素史克": "GSK.L",
+    "帝亞吉歐": "DGE.L",
+    "保誠": "PRU.L",
+    "勞埃德銀行": "LLOY.L",
+    "巴克萊": "BARC.L",
+    "沃達豐": "VOD.L",
+    "BAE系統": "BA.L",
+    "嘉能可": "GLEN.L",
+    "Shell plc": "SHEL.L",
+    "AstraZeneca PLC": "AZN.L",
+    "HSBC Holdings plc": "HSBA.L",
+    "Unilever PLC": "ULVR.L",
+    "BP p.l.c.": "BP.L",
+    "Rio Tinto plc": "RIO.L",
+    "GSK plc": "GSK.L",
+    "British American Tobacco p.l.c.": "BATS.L",
+    "Diageo plc": "DGE.L",
+    "RELX PLC": "REL.L",
+    "Prudential plc": "PRU.L",
+    "Lloyds Banking Group plc": "LLOY.L",
+    "Barclays PLC": "BARC.L",
+    "Vodafone Group Plc": "VOD.L",
+    "Arm Holdings plc": "ARM.L",
+    "BAE Systems plc": "BA.L",
+    "Glencore plc": "GLEN.L"
+  }
+}

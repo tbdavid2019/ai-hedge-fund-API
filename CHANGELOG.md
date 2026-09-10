@@ -6,30 +6,34 @@
 
 ## 🚀 [v2.4.0] - 2026-09-10
 
-### 🛡️ 1. 跨市場股票代碼智慧解析與 15,000+ 檔官方註冊快取 (Cross-Market Stock Resolver)
-- **本地標準化三國股票快取庫 (`data/`)**：
-  - 🇺🇸 **美股 (`data/us_stock_registry.json`)**：收錄美國 SEC EDGAR 官方 10,407 檔全美上市公司/ETF/ADR 規格、官方 CIK 編號與 80+ 檔高頻中文別名（蘋果、微軟、輝達、特斯拉、波克夏、SpaceX/SPCX 等）。
-  - 🇭🇰 **港股 (`data/hk_stock_registry.json`)**：收錄香港交易所 HKEX 官方 3,237 檔原生繁體中文名稱、每手股數、ISIN 碼與雙向智慧映射（700/0700 ➔ 0700.HK、9988 ➔ 9988.HK、3690 ➔ 3690.HK、騰訊、美團、阿里、小米、比亞迪、匯豐等）。
-  - 🇹🇼 **台股 (`data/tw_stock_registry.json`)**：收錄台灣證交所 TWSE 上市 1,331 檔與櫃買中心 TPEx 上櫃 903 檔，共 2,234 檔股票。
-- **跨市場解析與消歧義引擎 ([`src/tools/stock_resolver.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/tools/stock_resolver.py))**：
-  - **解決 4 位數純數字誤判**：台股無該代碼者（如 9988 阿里巴巴、3690 美團、1211 比亞迪）自動映射為港股 `.HK`，徹底杜絕舊版直接粗暴掛上 `.TW` 造成數據抓取失敗的問題。
-  - **解決台股上櫃市場 (.TWO) 斷線**：精確識別 TPEx 上櫃股票（如 3293 鈊象、8069 元太、6488 環球晶、5274 信驊）並映射為 Yahoo Finance 規格之 `.TWO`，修復全台上櫃股票查詢失敗問題。
-  - **港股 3 碼自動補零**：支援 700 ➔ 0700.HK、005 ➔ 0005.HK。
-  - **台美港中文公司名稱直通**：輸入「騰訊」、「美團」、「阿里巴巴」、「蘋果」、「特斯拉」、「輝達」、「儒鴻」、「鈊象」免記代號。
-  - **2MD 實時搜尋備援**：未收錄之冷門標的自動調用 2MD SERP 搜尋引擎智慧提取代號。
+### 🛡️ 1. 全球 7 大市場官方清冊（32,000+ 檔標的）與 SWR 雙線程跨日快取架構
+- **本地全球標準化股票快取庫 (`data/`)，收錄逾 32,000 檔標的**：
+  - 🇹🇼 **台股 (`tw_stock_registry.json`)**：TWSE 上市 1,331 檔 + TPEx 櫃買上櫃 903 檔，精準分離 `.TW` 與 `.TWO`。
+  - 🇺🇸 **美股 (`us_stock_registry.json`)**：美國 SEC EDGAR 官方 10,407 檔全美上市公司/ETF/ADR（涵蓋 NASDAQ、NYSE、AMEX、ARCA、BATS、IEX）+ CIK + 80+ 檔高頻中文別名 + SPCX。
+  - 🇭🇰 **港股 (`hk_stock_registry.json`)**：香港交易所 HKEX 官方 3,237 檔原生繁體中文名稱、每手股數、ISIN 碼。
+  - 🇨🇳 **陸股 A 股 (`cn_stock_registry.json`)**：上交所 (SSE) 8,099 檔 + 深交所 (SZSE) A 股官方名冊，自動映射 `.SS` 與 `.SZ`。
+  - 🇯🇵 **日股 (`jp_stock_registry.json`)**：日本交易所 JPX 官方 4,441 檔股票清冊，映射為 `.T`（如 7203.T 豐田、6758.T 索尼、9984.T 軟銀、7974.T 任天堂）。
+  - 🇪🇺 **泛歐 (`eu_stock_registry.json`)**：Euronext 官方 3,638 檔股票名冊，精準對應巴黎 (`.PA`)、阿姆斯特丹 (`.AS`)、布魯塞爾 (`.BR`)、里斯本 (`.LS`)、奧斯陸 (`.OL`)。
+  - 🇬🇧 **英股 (`uk_stock_registry.json`)**：倫敦交易所 LSE FTSE 藍籌標的，映射為 `.L`（如 SHEL.L 殼牌、AZN.L 阿斯利康、HSBA.L 匯豐）。
+- **SWR (Stale-While-Revalidate) 雙線程跨日非阻塞更新引擎 ([`src/tools/stock_resolver.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/tools/stock_resolver.py))**：
+  - **台北時間 00:00（Asia/Taipei）日界線觸發**：惰性求值，當天第一次有真實請求時觸發，休市與週末零資源浪費。
+  - **零等待零超時 (Zero-Latency)**：主線程立即以當前快取回傳（< 2ms），背景線程靜默更新並原子替換（Atomic Swap）。
+  - **Single-Flight 併發保護**：`threading.Lock` 鎖定防止同秒多個併發請求引發重複爬蟲（Thundering Herd）。
+  - **優雅降級**：若上游交易所暫時異常，保留上一份快取並標記 `stale: true`，服務永不中斷。
 
 ### 🧠 2. 14 位投資大師與圓桌會議（Round Table）產業背景強制綁定 (Anti-Hallucination)
 - **跨市場官方產業元數據 ([`src/tools/stock_resolver.py:get_company_profile`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/tools/stock_resolver.py))**：
-  - 自動抽取並封裝官方公司中文名、英文名、所屬交易所、板塊 (Sector)、行業 (Industry) 與業務摘要。
+  - 自動抽取並封裝官方公司中英文全稱、所屬交易所、板塊 (Sector)、行業 (Industry) 與業務摘要。
 - **圓桌會議 Prompt 注入 ([`src/round_table/engine.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/round_table/engine.py))**：
   - 在主席主持辯論的 System Prompt 中強行綁定標的公司之真實產業背景，徹底根除「儒鴻變半導體」、「鈊象變重工業」等離譜模型幻覺，大幅提升巴菲特、蒙格、女股神等大師的論點品質。
 
 ### 🌐 3. Web API 與自動化維護升級
-- **API 入口即時解析與專用端點 ([`webui2.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/webui2.py))**：
+- **API 端點擴展 ([`webui2.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/webui2.py))**：
+  - 新增 `GET /api/stock/registry/status`：即時查看全球 7 大市場 32,000+ 檔清冊之更新日期、SWR 背景線程狀態、Stale 標記與各市場統計。
+  - 強化 `POST /api/stock/resolve` 與 `GET /api/stock/resolve?q=...`：跨 7 大市場即時轉譯。
   - `/api/analysis` 與 `/api/analysis/async` 入口第一時間透過 `resolve_ticker` 標準化傳入之 `tickers`。
-  - 新增 `/api/stock/resolve`（支援 GET `?q=...` 及 POST）端點，即時回傳標準化 Ticker 與官方 Profile。
 - **自動化維護腳本 ([`scripts/update_stock_registries.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/scripts/update_stock_registries.py))**：
-  - 支援一鍵向 SEC 與 HKEX 定期拉取最新官方股票清冊更新。
+  - 支援一鍵向 SEC、HKEX、SSE、SZSE、JPX、Euronext 與 LSE 定期拉取最新官方股票清冊。
 
 ---
 

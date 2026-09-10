@@ -21,7 +21,7 @@ import time
 from src.main import run_hedge_fund
 from src.agents.round_table import round_table
 from src.llm.models import ModelProvider, get_model_info
-from src.tools.stock_resolver import resolve_ticker, get_company_profile
+from src.tools.stock_resolver import resolve_ticker, get_company_profile, get_registry_status
 
 # 加載 .env 環境變數
 load_dotenv()
@@ -373,6 +373,12 @@ def execute_async_analysis_task(
                 if SHOW_INTERNAL_ERROR_TRACEBACK:
                     analysis_tasks[task_id]["traceback"] = trace
                 analysis_tasks[task_id]["updated_at"] = datetime.utcnow().isoformat() + "Z"
+
+
+@app.route('/api/stock/registry/status', methods=['GET'])
+def api_registry_status():
+    """查看全球股票清冊快取與 SWR 雙線程更新狀態 (涵蓋台、美、港、陸、日、歐、英)"""
+    return jsonify(get_registry_status())
 
 
 @app.route('/api/stock/resolve', methods=['GET', 'POST'])
