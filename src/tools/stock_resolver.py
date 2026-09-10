@@ -197,6 +197,8 @@ def init_registries(force_reload: bool = False):
 
     # 7. United Kingdom (LSE)
     uk_file = os.path.join(data_dir, "uk_stock_registry.json")
+    if not os.path.exists(uk_file):
+        uk_file = os.path.join(data_dir, "lse_stock_registry.json")
     if os.path.exists(uk_file):
         try:
             with open(uk_file, "r", encoding="utf-8") as f:
@@ -379,7 +381,85 @@ def resolve_ticker(company_or_query: str) -> str:
     if query in KNOWN_TICKER_MAP:
         return KNOWN_TICKER_MAP[query]
 
-    # Clean exchange prefixes
+    # 1.5 Handle explicit exchange prefixes
+    if upper_query.startswith(("LSE:", "UK:")):
+        code = re.sub(r"^(LSE|UK):", "", upper_query).strip()
+        clean_code = re.sub(r"^(LSE|UK):", "", str(company_or_query).strip(), flags=re.I).strip()
+        if code in _UK_STOCKS:
+            return _UK_STOCKS[code]["ticker"]
+        if clean_code in _UK_NAME_TO_TICKER:
+            return _UK_NAME_TO_TICKER[clean_code]
+        if code in _UK_NAME_TO_TICKER:
+            return _UK_NAME_TO_TICKER[code]
+        if clean_code in KNOWN_TICKER_MAP:
+            return KNOWN_TICKER_MAP[clean_code]
+        return f"{code}.L"
+
+    if upper_query.startswith(("EURONEXT:", "EU:")):
+        code = re.sub(r"^(EURONEXT|EU):", "", upper_query).strip()
+        clean_code = re.sub(r"^(EURONEXT|EU):", "", str(company_or_query).strip(), flags=re.I).strip()
+        if clean_code in _EU_NAME_TO_TICKER:
+            return _EU_NAME_TO_TICKER[clean_code]
+        if code in _EU_NAME_TO_TICKER:
+            return _EU_NAME_TO_TICKER[code]
+        if clean_code in KNOWN_TICKER_MAP:
+            return KNOWN_TICKER_MAP[clean_code]
+        if code in _EU_STOCKS:
+            return _EU_STOCKS[code]["ticker"]
+        return f"{code}.PA"
+
+    if upper_query.startswith(("JPX:", "JP:")):
+        code = re.sub(r"^(JPX|JP):", "", upper_query).strip()
+        clean_code = re.sub(r"^(JPX|JP):", "", str(company_or_query).strip(), flags=re.I).strip()
+        if clean_code in KNOWN_TICKER_MAP:
+            return KNOWN_TICKER_MAP[clean_code]
+        if code in _JP_STOCKS:
+            return f"{code}.T"
+        if clean_code in _JP_NAME_TO_TICKER:
+            return _JP_NAME_TO_TICKER[clean_code]
+        return f"{code}.T"
+
+    if upper_query.startswith("SSE:"):
+        code = upper_query.replace("SSE:", "").strip()
+        return f"{code}.SS"
+
+    if upper_query.startswith("SZSE:"):
+        code = upper_query.replace("SZSE:", "").strip()
+        return f"{code}.SZ"
+
+    if upper_query.startswith("TWSE:"):
+        code = upper_query.replace("TWSE:", "").strip()
+        clean_code = re.sub(r"^TWSE:", "", str(company_or_query).strip(), flags=re.I).strip()
+        if clean_code in KNOWN_TICKER_MAP:
+            return KNOWN_TICKER_MAP[clean_code]
+        if clean_code in _TW_NAME_TO_CODE:
+            return _TW_NAME_TO_CODE[clean_code]
+        return f"{code}.TW"
+
+    if upper_query.startswith("TPEX:"):
+        code = upper_query.replace("TPEX:", "").strip()
+        clean_code = re.sub(r"^TPEX:", "", str(company_or_query).strip(), flags=re.I).strip()
+        if clean_code in KNOWN_TICKER_MAP:
+            return KNOWN_TICKER_MAP[clean_code]
+        if clean_code in _TW_NAME_TO_CODE:
+            return _TW_NAME_TO_CODE[clean_code]
+        return f"{code}.TWO"
+
+    if upper_query.startswith(("HKEX:", "HK:")):
+        code = re.sub(r"^(HKEX|HK):", "", upper_query).strip()
+        clean_code = re.sub(r"^(HKEX|HK):", "", str(company_or_query).strip(), flags=re.I).strip()
+        if clean_code in KNOWN_TICKER_MAP:
+            return KNOWN_TICKER_MAP[clean_code]
+        if clean_code in _HK_NAME_TO_CODE:
+            return _HK_NAME_TO_CODE[clean_code]
+        if code in _HK_CODE_MAP:
+            return _HK_CODE_MAP[code]
+        try:
+            return f"{int(code):04d}.HK"
+        except Exception:
+            return f"{code}.HK"
+
+    # Clean exchange prefixes for generic matching
     clean_query = (
         upper_query.replace("NASDAQ:", "")
         .replace("NYSE:", "")
@@ -398,6 +478,7 @@ def resolve_ticker(company_or_query: str) -> str:
     )
     if clean_query in KNOWN_TICKER_MAP:
         return KNOWN_TICKER_MAP[clean_query]
+
 
     # 2. Exact match in Registry Chinese Alias Dictionaries
     for alias_dict in (
@@ -476,13 +557,19 @@ def resolve_ticker(company_or_query: str) -> str:
         return f"{c}.TW"
 
     # 6. Global Ticker Patterns
+    # US Stock direct match (takes precedence for standard US symbols like NVDA, AAPL, SHEL, AZN)
+    if upper_query in _US_STOCKS:
+        return upper_query
+
     # Euronext direct match
     if upper_query in _EU_STOCKS:
         return _EU_STOCKS[upper_query]["ticker"]
-    # UK direct match
+
+    # UK LSE direct match (e.g. HSBA, ABDX, 4BB, 88E, LLOY)
     if upper_query in _UK_STOCKS:
         return _UK_STOCKS[upper_query]["ticker"]
-    # US Ticker pattern (1-5 capital letters like NVDA, AAPL, SPCX)
+
+    # US Ticker pattern (1-5 capital letters like SPCX)
     if re.match(r"^[A-Z]{1,5}$", upper_query):
         return upper_query
 
@@ -604,8 +691,8 @@ def get_company_profile(ticker: str) -> Dict[str, Any]:
         if long_name and long_name != clean_t:
             if tw_name:
                 display_name = f"{tw_name} ({long_name})"
-            elif hk_info or cn_info or jp_info or eu_info:
-                base_c = (hk_info or cn_info or jp_info or eu_info).get('name', '')
+            elif hk_info or cn_info or jp_info or eu_info or uk_info:
+                base_c = (hk_info or cn_info or jp_info or eu_info or uk_info).get('name', '')
                 display_name = f"{base_c} ({long_name})" if base_c else f"{long_name} ({clean_t})"
             elif not us_info:
                 display_name = f"{long_name} ({clean_t})"

@@ -6,20 +6,22 @@
 
 ## 🚀 [v2.4.0] - 2026-09-10
 
-### 🛡️ 1. 全球 7 大市場官方清冊（32,000+ 檔標的）與 SWR 雙線程跨日快取架構
-- **本地全球標準化股票快取庫 (`data/`)，收錄逾 32,000 檔標的**：
+### 🛡️ 1. 全球 7 大市場官方清冊（38,000+ 檔標的）與 SWR 雙線程跨日快取架構
+- **本地全球標準化股票快取庫 (`data/`)，收錄達 38,375 檔標的**：
   - 🇹🇼 **台股 (`tw_stock_registry.json`)**：TWSE 上市 1,331 檔 + TPEx 櫃買上櫃 903 檔，精準分離 `.TW` 與 `.TWO`。
   - 🇺🇸 **美股 (`us_stock_registry.json`)**：美國 SEC EDGAR 官方 10,407 檔全美上市公司/ETF/ADR（涵蓋 NASDAQ、NYSE、AMEX、ARCA、BATS、IEX）+ CIK + 80+ 檔高頻中文別名 + SPCX。
   - 🇭🇰 **港股 (`hk_stock_registry.json`)**：香港交易所 HKEX 官方 3,237 檔原生繁體中文名稱、每手股數、ISIN 碼。
   - 🇨🇳 **陸股 A 股 (`cn_stock_registry.json`)**：上交所 (SSE) 8,099 檔 + 深交所 (SZSE) A 股官方名冊，自動映射 `.SS` 與 `.SZ`。
   - 🇯🇵 **日股 (`jp_stock_registry.json`)**：日本交易所 JPX 官方 4,441 檔股票清冊，映射為 `.T`（如 7203.T 豐田、6758.T 索尼、9984.T 軟銀、7974.T 任天堂）。
   - 🇪🇺 **泛歐 (`eu_stock_registry.json`)**：Euronext 官方 3,638 檔股票名冊，精準對應巴黎 (`.PA`)、阿姆斯特丹 (`.AS`)、布魯塞爾 (`.BR`)、里斯本 (`.LS`)、奧斯陸 (`.OL`)。
-  - 🇬🇧 **英股 (`uk_stock_registry.json`)**：倫敦交易所 LSE FTSE 藍籌標的，映射為 `.L`（如 SHEL.L 殼牌、AZN.L 阿斯利康、HSBA.L 匯豐）。
+  - 🇬🇧 **英股 (`uk_stock_registry.json` / `lse_stock_registry.json`)**：完整解析倫敦證券交易所 (LSE) 官方每週公開 XLSX 清冊（SETS, SETSqx CCP, SETSqx Non-CCP, EQS），收錄達 6,319 檔（涵蓋 Mnemonic 代碼、ISIN、發行機構名稱、證券類別、幣別），映射為 `.L`（如 SHEL.L 殼牌、AZN.L 阿斯利康、HSBA.L 匯豐、LLOY.L 勞埃德）。
 - **SWR (Stale-While-Revalidate) 雙線程跨日非阻塞更新引擎 ([`src/tools/stock_resolver.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/tools/stock_resolver.py))**：
   - **台北時間 00:00（Asia/Taipei）日界線觸發**：惰性求值，當天第一次有真實請求時觸發，休市與週末零資源浪費。
   - **零等待零超時 (Zero-Latency)**：主線程立即以當前快取回傳（< 2ms），背景線程靜默更新並原子替換（Atomic Swap）。
   - **Single-Flight 併發保護**：`threading.Lock` 鎖定防止同秒多個併發請求引發重複爬蟲（Thundering Herd）。
   - **優雅降級**：若上游交易所暫時異常，保留上一份快取並標記 `stale: true`，服務永不中斷。
+  - **顯式交易所前綴精準分流**：支援 `LSE:`, `EURONEXT:`, `JPX:`, `SSE:`, `SZSE:`, `TWSE:`, `TPEX:`, `HKEX:` 等顯式前綴，精確解決跨交易所同名別名重疊（如 `LSE:HSBC` -> `HSBA.L` vs `HK:HSBC` -> `0005.HK`）。
+  - **美股 ADR 與海外代碼雙向保護**：無字尾 1-5 碼英文字母優先比對美股全集，海外藍籌母股透過前綴或 `.L` 精準轉譯，完全相容既有下游應用。
 
 ### 🧠 2. 14 位投資大師與圓桌會議（Round Table）產業背景強制綁定 (Anti-Hallucination)
 - **跨市場官方產業元數據 ([`src/tools/stock_resolver.py:get_company_profile`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/tools/stock_resolver.py))**：
