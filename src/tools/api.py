@@ -21,6 +21,7 @@ from data.models import (
     InsiderTrade,
     InsiderTradeResponse,
 )
+from tools.date_ranges import exclusive_end_date
 
 # Global cache instance
 _cache = get_cache()
@@ -127,7 +128,7 @@ def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = Fa
     # Try primary source: Yahoo Finance
     try:
         yf_ticker = yf.Ticker(yf_ticker_str)
-        df = yf_ticker.history(start=start_date, end=end_date)
+        df = yf_ticker.history(start=start_date, end=exclusive_end_date(end_date))
         
         if df is not None and not df.empty:
             if isinstance(df.columns, pd.MultiIndex):
@@ -237,7 +238,7 @@ def get_crypto_prices(ticker: str, start_date: str, end_date: str) -> list[Price
     
     # Convert dates to unix timestamps for APIs that require it
     start_timestamp = int(datetime.strptime(start_date, "%Y-%m-%d").timestamp())
-    end_timestamp = int(datetime.strptime(end_date, "%Y-%m-%d").timestamp())
+    exclusive_end_timestamp = int(datetime.strptime(exclusive_end_date(end_date), "%Y-%m-%d").timestamp())
     
     # Try CoinCap API first (completely free, no API key required)
     try:
@@ -260,7 +261,7 @@ def get_crypto_prices(ticker: str, start_date: str, end_date: str) -> list[Price
         params = {
             "interval": interval,
             "start": start_timestamp * 1000,  # Convert to milliseconds
-            "end": end_timestamp * 1000,
+            "end": exclusive_end_timestamp * 1000,
         }
         
         response = requests.get(url, params=params)
@@ -1195,7 +1196,7 @@ def get_company_news(
     # 2. Priority 2: Yahoo Finance News with Modern Content Dict Support
     if len(news_items) < limit:
         try:
-            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            end_dt = datetime.strptime(exclusive_end_date(end_date), '%Y-%m-%d')
             start_dt = datetime.strptime(start_date, '%Y-%m-%d') if start_date else end_dt - timedelta(days=90)
             
             yf_ticker = yf.Ticker(yf_ticker_str)
@@ -1228,7 +1229,7 @@ def get_company_news(
                 news_date = datetime.fromtimestamp(published_ts) if published_ts else datetime.now()
                 date_str = news_date.strftime('%Y-%m-%d')
                 
-                if (published_ts and (news_date < start_dt or news_date > end_dt)) or link in seen_urls:
+                if (published_ts and (news_date < start_dt or news_date >= end_dt)) or link in seen_urls:
                     continue
                 seen_urls.add(link)
                 
