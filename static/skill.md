@@ -56,7 +56,7 @@ Execute deep investment analysis across selected AI investor personas with optio
 
 | Parameter | Type | Required | Default | Description |
 |:---|:---|:---:|:---|:---|
-| `tickers` | string / array | ✅ | - | Ticker symbols, e.g. `"TSLA,NVDA"`, `"2330.TW"`, `"0001.HK"` |
+| `tickers` | string / array | ✅ | - | Tickers or company names across US, HK, TW (e.g. `"TSLA,NVDA"`, `"2330"`, `"3293"`, `"700"`, `"9988"`, `"騰訊"`, `"蘋果"`, `"SPCX"`) |
 | `selectedAnalysts` | array | ❌ | `[]` (all 14) | List of analyst keys to participate (see table below) |
 | `enableRoundTable` | boolean | ❌ | `false` | Enable multi-round debate committee after analyst signals |
 | `roundTableRounds` | integer | ❌ | `2` | Number of debate rounds (1 to 3) |

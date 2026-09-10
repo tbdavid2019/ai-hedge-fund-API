@@ -23,6 +23,11 @@ from data.models import (
 )
 from tools.date_ranges import exclusive_end_date
 
+try:
+    from tools.stock_resolver import resolve_ticker, get_company_profile
+except ImportError:
+    from src.tools.stock_resolver import resolve_ticker, get_company_profile
+
 # Global cache instance
 _cache = get_cache()
 
@@ -40,68 +45,19 @@ def get_api_keys():
 
 def _format_ticker_for_yfinance(ticker: str) -> str:
     """
-    根據股票代號自動判斷並轉換為 yfinance 套件所需的正確格式
+    根據股票代號或公司中文/英文名稱自動判斷並轉換為 yfinance 套件所需的正確格式。
+    
+    支援美股 (SEC 10,400+ 檔)、港股 (HKEX 3,200+ 檔)、台股 (TWSE .TW / TPEx .TWO) 及中文別名映射。
     
     Args:
-        ticker: 原始股票代號
+        ticker: 原始股票代號或公司名稱 (如 1476, 3293, 700, 9988, 騰訊, 蘋果, SpaceX)
         
     Returns:
-        格式化後的股票代號
+        格式化後的標準化股票代號 (例如 1476.TW, 3293.TWO, 0700.HK, NVDA, SPCX)
     """
-    known_tickers = {
-        "SPACEX": "SPCX",
-        "SPACE X": "SPCX",
-        "SPCX": "SPCX",
-        "太空探索": "SPCX",
-        "TSMC": "2330.TW",
-        "台積電": "2330.TW"
-    }
-    clean = ticker.upper().strip()
-    if clean in known_tickers:
-        return known_tickers[clean]
-
-    # 如果已經包含點號，直接使用（但處理港股的特殊情況）
-    if '.' in ticker:
-        if ticker.lower().endswith('.hk'):
-            # 港股：將 .hk 轉換為 .HK
-            base_ticker = ticker[:-3]
-            # 確保港股代號為4位數，不足的前面補0
-            if base_ticker.isdigit():
-                base_ticker = base_ticker.zfill(4)
-            return f"{base_ticker}.HK"
-        else:
-            # 其他已有後綴的直接返回
-            return ticker
-    
-    # 純數字代號的處理
-    if ticker.isdigit():
-        ticker_len = len(ticker)
-        ticker_int = int(ticker)
-        
-        # 台股：4位數字代號
-        if ticker_len == 4:
-            return f"{ticker}.TW"
-        
-        # 港股：1-4位數字代號（香港股票代號範圍通常是1-9999）
-        if ticker_len <= 4 and ticker_int <= 9999:
-            # 港股代號補齊為4位數
-            formatted_ticker = ticker.zfill(4)
-            return f"{formatted_ticker}.HK"
-        
-        # 中國股市：6位數字代號
-        if ticker_len == 6:
-            # 上海證券交易所：以6開頭
-            if ticker.startswith('6'):
-                return f"{ticker}.SS"
-            # 深圳證券交易所：以0、2、3開頭
-            elif ticker.startswith(('0', '2', '3')):
-                return f"{ticker}.SZ"
-            else:
-                # 其他6位數代號，預設為上海
-                return f"{ticker}.SS"
-    
-    # 字母代號（美股等）直接返回
-    return ticker
+    if not ticker:
+        return ""
+    return resolve_ticker(ticker)
 
 def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = False) -> list[Price]:
     """Fetch price data with multi-source fallback strategy."""

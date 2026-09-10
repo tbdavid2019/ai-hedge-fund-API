@@ -15,6 +15,11 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from llm.models import get_model, ModelProvider
 from utils.progress import progress
 
+try:
+    from tools.stock_resolver import get_company_profile
+except ImportError:
+    from src.tools.stock_resolver import get_company_profile
+
 logger = logging.getLogger(__name__)
 
 
@@ -145,9 +150,19 @@ def simulate_round_table(
     signals_text = "\n".join(signals_summary)
     personas_text = "\n".join([f"- **{p['name']}**: {p['style']} (Philosophy: {p['philosophy']})" for p in active_personas])
 
+    # Fetch authentic company profile to prevent any hallucination
+    profile = get_company_profile(ticker)
+    company_context = f"""Target Company Reality & Background (Anti-Hallucination Metadata):
+- **Ticker & Market**: {profile.get('ticker', ticker)} on {profile.get('market', 'Global Market')}
+- **Company Name**: {profile.get('name', ticker)}
+- **Sector & Industry**: {profile.get('sector', 'N/A')} / {profile.get('industry', 'N/A')}
+- **Business Summary**: {profile.get('business_summary', 'N/A')}"""
+
     # Construct the multi-round discussion prompt
     system_prompt = f"""You are the Chairman & Chief Moderator of the Investment Committee Round Table.
 You are facilitating a high-stakes, multi-round debate on ${ticker} with a panel of legendary investors and quantitative analysts.
+
+{company_context}
 
 Panelists Present:
 {personas_text}

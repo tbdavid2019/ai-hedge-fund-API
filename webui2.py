@@ -21,6 +21,7 @@ import time
 from src.main import run_hedge_fund
 from src.agents.round_table import round_table
 from src.llm.models import ModelProvider, get_model_info
+from src.tools.stock_resolver import resolve_ticker, get_company_profile
 
 # 加載 .env 環境變數
 load_dotenv()
@@ -374,6 +375,24 @@ def execute_async_analysis_task(
                 analysis_tasks[task_id]["updated_at"] = datetime.utcnow().isoformat() + "Z"
 
 
+@app.route('/api/stock/resolve', methods=['GET', 'POST'])
+def api_resolve_stock():
+    """解析股票代號或公司名稱為標準化代碼及官方中英文檔案"""
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        query = data.get('query') or data.get('ticker') or ''
+    else:
+        query = request.args.get('q') or request.args.get('ticker') or ''
+    
+    ticker = resolve_ticker(query)
+    profile = get_company_profile(ticker) if ticker else {}
+    return jsonify({
+        "query": query,
+        "ticker": ticker,
+        "profile": profile
+    })
+
+
 @app.route('/api/analysis/async', methods=['POST'])
 @app.route('/api/analysis', methods=['POST'])
 def run_analysis():
@@ -382,9 +401,13 @@ def run_analysis():
         data = request.get_json() or {}
         raw_tickers = data.get('tickers', '')
         if isinstance(raw_tickers, list):
-            ticker_list = [t.strip() for t in raw_tickers if t.strip()]
+            raw_list = [t.strip() for t in raw_tickers if t.strip()]
         else:
-            ticker_list = [t.strip() for t in str(raw_tickers).split(',') if t.strip()]
+            raw_list = [t.strip() for t in str(raw_tickers).split(',') if t.strip()]
+            
+        ticker_list = [resolve_ticker(t) for t in raw_list if t]
+        if not ticker_list:
+            ticker_list = raw_list
             
         selected_analysts = data.get('selectedAnalysts', [])
         default_model = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-20b")

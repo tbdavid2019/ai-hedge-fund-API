@@ -60,6 +60,12 @@ ai-hedge-fund-API/
 ├── skill.md                  # LLM Agent Skill specification (served at /skill.md & /)
 ├── ANALYSTS.md               # 14 Analyst investment philosophies & models
 ├── CHANGELOG.md              # Semantic version history
+├── data/                     # Offline-ready Stock Registries (~15,000+ listings)
+│   ├── us_stock_registry.json# US SEC EDGAR (10,407 stocks + Chinese aliases + SPCX)
+│   ├── hk_stock_registry.json# HKEX (3,237 stocks + native Traditional Chinese names)
+│   └── tw_stock_registry.json# TWSE/TPEx (2,234 stocks with .TW and .TWO suffixes)
+├── scripts/
+│   └── update_stock_registries.py # Official registry auto-fetcher
 ├── static/
 │   ├── swagger.json          # OpenAPI 3.0.3 specification
 │   └── skill.md              # Static skill guide served by Flask
@@ -90,6 +96,7 @@ ai-hedge-fund-API/
     │   ├── main.py           # run_round_table orchestration
     │   └── display.py        # Terminal formatting with colorama
     ├── tools/
+    │   ├── stock_resolver.py # Multi-market stock resolver & anti-hallucination profile cache
     │   ├── url2md.py         # 2md API client (primary & fallback endpoints)
     │   └── api.py            # Financial data retrieval, Yahoo/AlphaVantage aggregation
     ├── llm/
