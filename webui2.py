@@ -383,9 +383,25 @@ def api_registry_status():
 
 @app.route('/api/stock/resolve', methods=['GET', 'POST'])
 def api_resolve_stock():
-    """解析股票代號或公司名稱為標準化代碼及官方中英文檔案"""
+    """解析股票代號或公司名稱為標準化代碼及官方中英文檔案（支援單筆或多筆批次）"""
     if request.method == 'POST':
         data = request.get_json() or {}
+        raw_list = data.get('tickers') or data.get('queries')
+        if raw_list and isinstance(raw_list, list):
+            results = []
+            for item in raw_list:
+                item_str = str(item).strip()
+                t = resolve_ticker(item_str)
+                prof = get_company_profile(t) if t else {}
+                results.append({
+                    "query": item_str,
+                    "ticker": t,
+                    "profile": prof
+                })
+            return jsonify({
+                "count": len(results),
+                "results": results
+            })
         query = data.get('query') or data.get('ticker') or ''
     else:
         query = request.args.get('q') or request.args.get('ticker') or ''
