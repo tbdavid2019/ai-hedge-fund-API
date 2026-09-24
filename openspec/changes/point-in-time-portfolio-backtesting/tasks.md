@@ -26,3 +26,8 @@
 
 - [ ] 4.1 Run the repository's focused data, portfolio, and backtest test suites; verify historical cutoff, request compatibility, resume, benchmark, and execution-cost scenarios pass together.
 - [ ] 4.2 Run the documented Python syntax verification for modified modules and validate the OpenAPI document; verify the existing analysis endpoint remains usable without new request fields.
+
+## 5. Follow-Up Architecture Assessment
+
+- [ ] 5.1 After the core run store and grid evaluation are integrated, assess whether LangGraph checkpoint recovery adds value beyond committed session state; verify a written recommendation covers restart behavior, graph compatibility, persistent storage, operational cost, and go/no-go.
+- [ ] 5.2 Assess persistent decision logs or reflection memory after point-in-time protections are complete; verify a written recommendation covers leakage risk, reproducibility, privacy/retention, measurable benefit, opt-in boundaries, and go/no-go, with a separate follow-up proposal if accepted.

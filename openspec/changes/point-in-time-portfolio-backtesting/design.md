@@ -11,10 +11,12 @@ The API currently builds an empty portfolio from `initialCash`; the analyst work
 - Make the time a fact became public distinct from the period or event the fact describes.
 - Preserve legacy analysis requests while accepting a validated portfolio object.
 - Add durable, resumable grid evaluation and benchmark-relative metrics to the existing backtester.
+- Make evidence-based follow-up decisions about graph checkpoint recovery and decision memory after the core work is integrated.
 
 **Non-Goals:**
 
 - Replacing the LangGraph workflow or existing backtest simulation.
+- Implementing checkpoint recovery or persistent decision memory as part of this change; this change only evaluates those follow-up options.
 - Promising byte-identical LLM output across repeated runs.
 - Adding every TradingAgents data vendor, a decision-memory feature, or a broad LLM provider registry.
 - Treating unsupported point-in-time sources as safe by inference.
@@ -54,6 +56,10 @@ Store the model output and normalized inputs/provenance for completed cells. A r
 Reuse the repository's stock resolver and a versioned benchmark mapping to select a regional benchmark. For a multi-ticker portfolio, build a composite benchmark using each ticker's starting invested-value weight, or equal weights when the starting portfolio is flat. Calculate benchmark return over the same dates as the strategy and report the difference in percentage points. If no benchmark is mapped, preserve absolute metrics and report benchmark-relative metrics as unavailable with a reason; do not silently substitute a US benchmark for another market.
 
 Require the evaluation configuration to carry transaction-fee and slippage assumptions. Do not silently assume zero costs. The initial interface can provide documented baseline values while allowing callers to override them; persist the effective values in every run manifest.
+
+### Evaluate recovery and memory only after the core evaluation path
+
+After point-in-time inputs, portfolio handling, and grid evaluation are integrated, review whether LangGraph checkpoints add useful recovery beyond the run store's committed session state. Separately assess a persistent decision log or reflection memory for data leakage, reproducibility, privacy, and measurable value. Produce a go/no-go recommendation for each and a separate implementation proposal for any accepted follow-up; do not add either feature to the current runtime scope.
 
 ## Risks / Trade-offs
 

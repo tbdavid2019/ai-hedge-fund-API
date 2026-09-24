@@ -10,6 +10,7 @@ Historical analyses can use values that were revised or published after the requ
 - Allow analysis requests to carry current portfolio cash, currency, and positions while keeping requests without a portfolio backward compatible.
 - Extend backtesting to run resumable ticker/date grids and report benchmark-relative results alongside existing portfolio risk metrics, transaction-cost assumptions, and slippage assumptions.
 - Record enough run configuration and data-source metadata to explain and reproduce each evaluation.
+- After the core historical-analysis and backtesting work, assess LangGraph checkpoint recovery and persistent decision memory; deliver a go/no-go recommendation and a separate follow-up scope if either is justified.
 
 ## Capabilities
 
