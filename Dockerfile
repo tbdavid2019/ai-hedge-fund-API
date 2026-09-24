@@ -4,14 +4,17 @@ FROM python:3.13
 # 設置工作目錄
 WORKDIR /app
 
-# 複製專案檔案
-COPY . .
+# 先安裝依賴，讓純程式碼變更能重用 Docker dependency layer
+COPY requirements.txt .
 
 # 建立虛擬環境並安裝依賴
 RUN python -m venv venv && \
     . venv/bin/activate && \
     pip install --upgrade pip --retries 5 --timeout 300 && \
     pip install -r requirements.txt --retries 5 --timeout 300
+
+# 依賴安裝完成後才複製程式碼
+COPY . .
 
 # 設定環境變數
 ENV PYTHONUNBUFFERED=1

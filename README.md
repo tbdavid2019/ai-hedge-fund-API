@@ -140,7 +140,7 @@ docker compose up -d
 
 ### 使用 GHCR 預建映像
 
-GitHub Actions 會將 `latest` 與目前 `yfinance.version` 版本標籤發布至 GHCR。可用 `AI_HEDGE_FUND_IMAGE` 指定 Compose 使用的映像；未設定時仍會使用本機建置的 `ai-hedge-fund-api:latest`。
+GitHub Actions 會在 `main` 有程式碼異動時建置並發布 `latest` 與目前 `yfinance.version` 標籤至 GHCR，接著透過 SSH 在 `dns.glsoft.ai` 拉取程式碼、於遠端主機建置並重啟 API。部署後會驗證 `/api/health` 和 `/api/backtest/grid` 入參檢查。此流程需要在 GitHub Actions Secrets 設定 `PRODUCTION_DEPLOY_KEY`（部署專用 SSH 私鑰）；排程仍會檢查 yfinance 更新。可用 `AI_HEDGE_FUND_IMAGE` 指定 Compose 使用的映像；未設定時仍會使用主機本機建置的 `ai-hedge-fund-api:latest`。
 
 ```bash
 # 拉取目前 latest 並以預建映像啟動（不進行本機建置）
@@ -178,8 +178,8 @@ Docker Hub `tbdavid2019/ai-hedge-fund-api` 僅作為可選鏡像；未設定 `DO
 ./scripts/start_watchtower.sh
 ```
 
-### 2. yfinance 自動版本檢查與自主 Docker 重建
-由於 Yahoo Finance 介面經常變更，本專案提供自主檢測腳本，可自動查詢 PyPI 上是否有最新 `yfinance` 版本，並自動重構 Docker 容器：
+### 2. 程式碼部署與 yfinance 自動版本檢查
+`main` 分支收到程式碼 push 時，GitHub Actions 會要求遠端主機執行 `git pull`、`docker compose up -d --build`，並以 API smoke test 驗證部署。Yahoo Finance 依賴另由排程檢查 PyPI 上的 `yfinance` 版本：
 ```bash
 # 檢查 PyPI 版本，若有新版則自動升級、重構映像並重啟容器
 ./scripts/auto_rebuild_yfinance.sh

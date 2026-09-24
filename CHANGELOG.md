@@ -6,6 +6,11 @@
 
 ## 🚀 未發布
 
+### 🚀 程式碼 Push 自動建置、遠端部署與 API 驗證
+- `main` 上的程式碼變更會觸發 GHCR 映像建置，並透過專用 GitHub Actions SSH key 在 `dns.glsoft.ai` 拉取程式碼、遠端建置與重啟 API。
+- 部署流程會檢查 `/api/health`，並以無效回測輸入驗證 `/api/backtest/grid` 路由。
+- 排程仍負責 yfinance 版本檢查；新版或手動強制建置會關閉 Docker cache。Dockerfile 將依賴與程式碼分層複製，讓一般程式碼部署重用依賴層。
+
 ### 📊 Point-in-Time 持倉分析與可續跑回測
 - 為日期資料加入業務日期、發布可用時間、來源與 PIT 狀態；新增嚴格 cutoff、來源覆蓋/排除報告與 SEC EDGAR filing metadata adapter。
 - `/api/analysis` 支援有日期的多空持倉、現金幣別與歷史匯率；新增同步日期網格 `/api/backtest/grid`、SQLite 不可變輸入快照/續跑 checkpoints 與 run 查詢端點。

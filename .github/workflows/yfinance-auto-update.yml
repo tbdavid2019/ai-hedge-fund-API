@@ -53,7 +53,7 @@ jobs:
           FORCE="${{ inputs.force_rebuild }}"
           EVENT="${{ github.event_name }}"
           
-          if [ "$HAS_UPDATE" = "true" ] || [ "$FORCE" = "true" ]; then
+          if [ "$HAS_UPDATE" = "true" ] || [ "$FORCE" = "true" ] || [ "$EVENT" = "push" ]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
             echo "🚀 Build triggered! (has_update=$HAS_UPDATE, force=$FORCE, event=$EVENT)"
           else
@@ -86,7 +86,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          no-cache: true
+          no-cache: ${{ steps.check_yfinance.outputs.has_update == 'true' || inputs.force_rebuild == true }}
           tags: |
             ${{ steps.image.outputs.ghcr_image }}:latest
             ${{ steps.image.outputs.ghcr_image }}:${{ steps.check_yfinance.outputs.latest_version }}
@@ -164,3 +164,31 @@ jobs:
           git add yfinance.version
           git commit -m "chore(auto-update): bump yfinance version to ${{ steps.check_yfinance.outputs.latest_version }} [skip ci]" || echo "No changes to commit"
           git push origin main || echo "Push failed or branch locked"
+
+  deploy-production:
+    name: 🚀 Build and verify on production host
+    needs: check-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🔐 Configure production SSH
+        env:
+          PRODUCTION_DEPLOY_KEY: ${{ secrets.PRODUCTION_DEPLOY_KEY }}
+        run: |
+          test -n "$PRODUCTION_DEPLOY_KEY" || { echo "PRODUCTION_DEPLOY_KEY secret is required"; exit 1; }
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$PRODUCTION_DEPLOY_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          printf '%s\n' 'dns.glsoft.ai ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcQ+1L0L9t9WOil5EXMn/T24VYQHLposazANwSzjpox' > "$HOME/.ssh/known_hosts"
+
+      - name: 🏗️ Pull code, build and restart on production host
+        run: ssh -i "$HOME/.ssh/id_ed25519" -o BatchMode=yes ubuntu@dns.glsoft.ai
+
+      - name: 🩺 Verify production API
+        run: |
+          curl --fail --silent --show-error --retry 20 --retry-delay 3 --retry-connrefused http://dns.glsoft.ai:6000/api/health | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("status") == "healthy", data; print(data)'
+          response=$(curl --silent --show-error --max-time 10 -w '\n%{http_code}' -X POST http://dns.glsoft.ai:6000/api/backtest/grid -H 'Content-Type: application/json' -d '{"runId":"ci-smoke-test","tickers":[],"startDate":"2026-01-01","endDate":"2026-01-03"}')
+          status=${response##*$'\n'}
+          body=${response%$'\n'*}
+          test "$status" = 400
+          printf '%s' "$body" | python -c 'import json,sys; data=json.load(sys.stdin); assert "tickers" in data.get("error", ""), data; print(data)'
