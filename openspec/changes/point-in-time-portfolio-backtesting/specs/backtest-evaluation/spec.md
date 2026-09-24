@@ -32,6 +32,8 @@ The system MUST support a backtest evaluation over multiple tickers and decision
 ### Requirement: Grid evaluations can resume safely
 The system MUST assign each evaluation a run identifier and MUST allow an interrupted evaluation to resume without repeating completed cells or overwriting unrelated analysis history. The run identity MUST include the starting portfolio and all execution and benchmark configuration. Before the first decision session, the system MUST persist the full run's normalized point-in-time input snapshots and source/version identifiers; every resumed cell MUST reuse its saved snapshot.
 
+The production deployment MUST store the configured SQLite database on persistent host or container storage so completed run snapshots and checkpoints survive application container replacement.
+
 #### Scenario: Resume an interrupted evaluation
 - **WHEN** a user resumes a run with the same run identifier and configuration
 - **THEN** the system MUST retain completed cell results and process only unfinished cells
@@ -39,6 +41,22 @@ The system MUST assign each evaluation a run identifier and MUST allow an interr
 #### Scenario: Resume with a changed configuration
 - **WHEN** a run identifier is reused with a materially different model, analyst set, date grid, or data configuration
 - **THEN** the system MUST reject the resume or require a new run identifier
+
+#### Scenario: Run data survives application replacement
+- **WHEN** the application container is replaced during deployment
+- **THEN** previously committed runs and snapshots MUST remain available from the persistent SQLite database
+
+### Requirement: Grid requests reject unknown analyst identifiers
+The grid API MUST reject malformed analyst selections and identifiers that do not exist in the analyst registry before starting a run. It MUST NOT report a completed run when no selected analyst was executed because of an invalid identifier.
+
+#### Scenario: Unknown analyst key is supplied
+- **WHEN** a grid request includes an analyst key absent from the analyst registry
+- **THEN** the API MUST return HTTP 400 with the invalid key identified
+- **AND** MUST NOT create a run or invoke an analyst workflow
+
+#### Scenario: Analyst selection is not an array
+- **WHEN** a grid request supplies `selectedAnalysts` with a non-array value
+- **THEN** the API MUST return HTTP 400 before creating a run
 
 ### Requirement: Results include benchmark-relative performance
 Each completed evaluation MUST report portfolio return and risk metrics, the selected benchmark return, and benchmark-relative return over the same evaluation interval. Results MUST record the execution-cost and slippage assumptions used.

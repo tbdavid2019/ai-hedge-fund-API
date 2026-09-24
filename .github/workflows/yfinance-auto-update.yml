@@ -91,6 +91,14 @@ jobs:
             ${{ steps.image.outputs.ghcr_image }}:latest
             ${{ steps.image.outputs.ghcr_image }}:${{ steps.check_yfinance.outputs.latest_version }}
 
+      - name: 🧪 Run repository tests inside the published image
+        if: steps.build_decision.outputs.should_build == 'true'
+        env:
+          TEST_IMAGE: ${{ steps.image.outputs.ghcr_image }}:latest
+        run: |
+          docker pull "$TEST_IMAGE"
+          docker run --rm "$TEST_IMAGE" venv/bin/python -m pytest -q tests
+
       - name: 🔎 Check optional Docker Hub mirror credentials
         id: dockerhub_credentials
         if: steps.build_decision.outputs.should_build == 'true'
@@ -187,8 +195,8 @@ jobs:
       - name: 🩺 Verify production API
         run: |
           curl --fail --silent --show-error --retry 20 --retry-delay 3 --retry-connrefused http://dns.glsoft.ai:6000/api/health | python -c 'import json,sys; data=json.load(sys.stdin); assert data.get("status") == "healthy", data; print(data)'
-          response=$(curl --silent --show-error --max-time 10 -w '\n%{http_code}' -X POST http://dns.glsoft.ai:6000/api/backtest/grid -H 'Content-Type: application/json' -d '{"runId":"ci-smoke-test","tickers":[],"startDate":"2026-01-01","endDate":"2026-01-03"}')
+          response=$(curl --silent --show-error --max-time 10 -w '\n%{http_code}' -X POST http://dns.glsoft.ai:6000/api/backtest/grid -H 'Content-Type: application/json' -d '{"runId":"ci-smoke-invalid-analyst","tickers":["MSFT"],"startDate":"2026-01-01","endDate":"2026-01-03","selectedAnalysts":["technicals"]}')
           status=${response##*$'\n'}
           body=${response%$'\n'*}
           test "$status" = 400
-          printf '%s' "$body" | python -c 'import json,sys; data=json.load(sys.stdin); assert "tickers" in data.get("error", ""), data; print(data)'
+          printf '%s' "$body" | python -c 'import json,sys; data=json.load(sys.stdin); assert "technicals" in data.get("error", ""), data; print(data)'

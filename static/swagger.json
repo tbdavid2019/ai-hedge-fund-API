@@ -73,6 +73,16 @@
               }
             }
           },
+          "400": {
+            "description": "請求格式錯誤，包含未知或格式錯誤的 selectedAnalysts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "伺服器錯誤",
             "content": {
@@ -217,7 +227,14 @@
             }
           },
           "400": {
-            "description": "Invalid request"
+            "description": "Invalid request, including malformed or unknown selectedAnalysts keys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "500": {
             "description": "Run failure"
@@ -269,7 +286,7 @@
           },
           "selectedAnalysts": {
             "type": "array",
-            "description": "選擇的分析師列表，空陣列表示使用全部 14 位分析師",
+            "description": "分析師 key 陣列，必須來自 analyst registry；未知 key 或非陣列值會在工作開始前回 HTTP 400。空陣列表示使用全部 14 位分析師。",
             "items": {
               "type": "string",
               "enum": [
@@ -490,6 +507,9 @@
           "cutoffTimeUtc": {
             "type": "string",
             "default": "16:00:00Z"
+          },
+          "selectedAnalysts": {
+            "$ref": "#/components/schemas/AnalysisRequest/properties/selectedAnalysts"
           },
           "initialCash": {
             "type": "number",

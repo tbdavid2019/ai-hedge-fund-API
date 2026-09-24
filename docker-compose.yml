@@ -12,11 +12,14 @@ services:
       - "6000:6000"
     env_file:
       - .env
+    environment:
+      BACKTEST_RUN_DB: /app/instance/backtest_runs.sqlite3
     volumes:
       - ./src:/app/src
       - ./webui2.py:/app/webui2.py
       - ./static:/app/static
       - ./data:/app/data
+      - ./instance:/app/instance
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     networks:

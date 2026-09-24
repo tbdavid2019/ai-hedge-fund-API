@@ -57,7 +57,7 @@ Execute deep investment analysis across selected AI investor personas with optio
 | Parameter | Type | Required | Default | Description |
 |:---|:---|:---:|:---|:---|
 | `tickers` | string / array | ✅ | - | Tickers or company names across US, HK, TW (e.g. `"TSLA,NVDA"`, `"2330"`, `"3293"`, `"700"`, `"9988"`, `"騰訊"`, `"蘋果"`, `"SPCX"`) |
-| `selectedAnalysts` | array | ❌ | `[]` (all 14) | List of analyst keys to participate (see table below) |
+| `selectedAnalysts` | array | ❌ | `[]` (all 14) | Analyst registry keys; unknown keys or non-array values return HTTP 400 |
 | `enableRoundTable` | boolean | ❌ | `false` | Enable multi-round debate committee after analyst signals |
 | `roundTableRounds` | integer | ❌ | `2` | Number of debate rounds (1 to 3) |
 | `initialCash` | number | ❌ | `100000` | Starting portfolio cash |
@@ -72,12 +72,12 @@ Strict point-in-time mode uses verified publication/availability time, not repor
 
 #### Resumable backtest grid
 
-- `POST /api/backtest/grid`: accepts `runId`, `tickers`, `startDate`, `endDate`; optional `portfolio`, `initialCash`, `cutoffTimeUtc` (shared UTC cutoff), `dailyRebalancePolicy` (`daily` or `none`), `transactionFeeRate` (default `0.001`), and `slippageRate` (default `0.0005`).
+- `POST /api/backtest/grid`: accepts `runId`, `tickers`, `startDate`, `endDate`; optional `portfolio`, `initialCash`, `cutoffTimeUtc` (shared UTC cutoff), `selectedAnalysts` (array of keys from the analyst registry; unknown keys and non-array values return HTTP 400), `dailyRebalancePolicy` (`daily` or `none`), `transactionFeeRate` (default `0.001`), and `slippageRate` (default `0.0005`).
 - `GET /api/backtest/runs/<run_id>`: reads the persisted manifest and result.
-- Reusing a `runId` resumes the original immutable data snapshots only when the configuration fingerprint matches. SQLite defaults to `instance/backtest_runs.sqlite3`; set `BACKTEST_RUN_DB` to a persistent mounted path in container deployments.
+- Reusing a `runId` resumes the original immutable data snapshots only when the configuration fingerprint matches. SQLite defaults to `instance/backtest_runs.sqlite3`; Docker Compose mounts `./instance` to `/app/instance` and sets `BACKTEST_RUN_DB=/app/instance/backtest_runs.sqlite3` so checkpoints survive container replacement.
 - Grid results disclose source coverage, excluded unknown timestamps, benchmark mapping/version, fees, slippage, current-universe survivorship bias, and that dividends are not modeled.
 
-Example: `{"runId":"trial-1","tickers":["AAPL","2330.TW"],"startDate":"2026-01-05","endDate":"2026-01-30","initialCash":100000}`
+Example: `{"runId":"trial-1","tickers":["AAPL","2330.TW"],"startDate":"2026-01-05","endDate":"2026-01-30","cutoffTimeUtc":"23:59:59Z","selectedAnalysts":["technical_analyst"],"initialCash":100000}`
 
 #### Response Format (JSON):
 ```json

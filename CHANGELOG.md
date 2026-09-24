@@ -16,6 +16,7 @@
 - 為日期資料加入業務日期、發布可用時間、來源與 PIT 狀態；新增嚴格 cutoff、來源覆蓋/排除報告與 SEC EDGAR filing metadata adapter。
 - `/api/analysis` 支援有日期的多空持倉、現金幣別與歷史匯率；新增同步日期網格 `/api/backtest/grid`、SQLite 不可變輸入快照/續跑 checkpoints 與 run 查詢端點。
 - 回測加入區域 benchmark、手續費/滑價假設及限制揭露；拆股歷史無法確認時 strict PIT 會排除價格，持倉依分析 cutoff 市價重估；同步更新 OpenAPI、README、AGENTS 與 skill 文件。
+- 修正驗收發現的兩項部署/API 缺口：未知 analyst key 在工作啟動前回 HTTP 400；Compose 將 SQLite run store 固定存入持久掛載的 `instance/`，遷移既有資料並排除 image build context，確保容器替換後仍可續跑。CI 在發布後、正式部署前會在該映像內執行完整測試集。
 
 ### 📦 GHCR 容器映像發布與部署
 - GitHub Actions 使用 `GITHUB_TOKEN` 與 `packages: write` 將 `latest` 及 yfinance 版本標籤發布至 GitHub Container Registry (GHCR)，不再要求 Docker Hub 憑證才能發布。

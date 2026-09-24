@@ -25,6 +25,7 @@ from src.tools.stock_resolver import resolve_ticker, get_company_profile, get_re
 from src.data.portfolio import add_quote_currency_rates, normalize_portfolio_input
 from src.backtest_evaluation import run_backtest_grid
 from src.backtest_store import BacktestRunStore
+from src.utils.analysts import ANALYST_CONFIG
 
 # 加載 .env 環境變數
 load_dotenv()
@@ -42,6 +43,19 @@ def format_api_error_response(error: Exception) -> dict:
     if SHOW_INTERNAL_ERROR_TRACEBACK:
         resp["traceback"] = traceback.format_exc()
     return resp
+
+
+def validate_selected_analysts(value) -> list[str]:
+    """Reject unknown analyst keys before an API request starts any work."""
+    if not isinstance(value, list):
+        raise ValueError("selectedAnalysts must be an array of analyst keys")
+
+    invalid = [key for key in value if not isinstance(key, str) or key not in ANALYST_CONFIG]
+    if invalid:
+        formatted = ", ".join(repr(key) for key in invalid)
+        raise ValueError(f"selectedAnalysts contains unknown analyst key(s): {formatted}")
+
+    return list(dict.fromkeys(value))
 
 
 # Discord Webhook 設定
@@ -436,7 +450,9 @@ def run_analysis():
         if not ticker_list:
             ticker_list = raw_list
             
-        selected_analysts = data.get('selectedAnalysts', [])
+        selected_analysts = validate_selected_analysts(
+            data["selectedAnalysts"] if "selectedAnalysts" in data else []
+        )
         default_model = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-20b")
         default_provider = os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
         model_name = data.get('modelName') or default_model
@@ -601,6 +617,9 @@ def run_backtest_grid_api():
 
         model_name = data.get("modelName") or os.getenv("DEFAULT_MODEL", "openai/gpt-oss-20b")
         model_provider = infer_model_provider(model_name, data.get("modelProvider") or os.getenv("DEFAULT_MODEL_PROVIDER", "Groq"))
+        selected_analysts = validate_selected_analysts(
+            data["selectedAnalysts"] if "selectedAnalysts" in data else []
+        )
         result = run_backtest_grid(
             run_id=run_id, tickers=tickers, start_date=start_date, end_date=end_date,
             cutoff_time_utc=str(data.get("cutoffTimeUtc", "16:00:00Z")),
@@ -608,7 +627,7 @@ def run_backtest_grid_api():
             initial_cash=float(data.get("initialCash", 100000)),
             starting_portfolio=starting_portfolio,
             model_name=model_name, model_provider=model_provider,
-            selected_analysts=data.get("selectedAnalysts", []),
+            selected_analysts=selected_analysts,
             is_crypto=bool(data.get("isCrypto", False)),
             daily_rebalance_policy=str(data.get("dailyRebalancePolicy", "daily")),
             transaction_fee_rate=float(data.get("transactionFeeRate", 0.001)),

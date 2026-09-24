@@ -21,11 +21,14 @@
 - [x] 3.3 Add versioned regional benchmark mapping, a composite benchmark weighted by starting holdings (equal-weighted for a flat portfolio), transaction fees, and slippage; verify matched intervals, benchmark weights, and unavailable cases.
 - [x] 3.4 Return and persist run configuration, point-in-time coverage, source exclusions, benchmark selection, cost assumptions, and existing risk metrics; verify serialized results contain the full evaluation manifest.
 - [x] 3.5 Document the grid-run interface, resume behavior, configurable database location, persistent deployment storage, benchmark limits, and cost assumptions; verify the documented invocation matches the implemented interface.
+- [ ] 3.6 Configure production Compose to use a persistent mounted SQLite database path, migrate any existing in-container run store, and exclude database files from the image build context; verify prior runs survive service container replacement.
 
 ## 4. Integration and Compatibility
 
 - [x] 4.1 Run the repository's focused data, portfolio, and backtest test suites; verify historical cutoff, request compatibility, resume, benchmark, and execution-cost scenarios pass together.
 - [x] 4.2 Run the documented Python syntax verification for modified modules and validate the OpenAPI document; verify the existing analysis endpoint remains usable without new request fields.
+- [ ] 4.3 Validate `selectedAnalysts` against the shared registry in synchronous, asynchronous, and grid API routes; return HTTP 400 for malformed or unknown keys and add route regression coverage.
+- [ ] 4.4 Extend deployment smoke checks to reject an unknown analyst key without creating a run; verify the response is HTTP 400.
 
 ## 5. Follow-Up Architecture Assessment
 

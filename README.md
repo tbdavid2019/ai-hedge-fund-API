@@ -49,12 +49,12 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 
 `POST /api/analysis` 可選擇傳入明確的 `portfolio` 快照（`as_of`、`cash`、幣別與多空持倉）；明確快照的現金優先於舊版 `initialCash`。設定 `pointInTime: true` 會依資料可用時間套用嚴格截止，未知發布時間資料會排除並回報覆蓋率。SEC filing metadata 使用 acceptance time 加 3 分鐘保守緩衝；此 metadata 不會把 Yahoo 財報值轉成 PIT 財報。跨幣別持倉需要可用的歷史 FX 報價。現有股票清冊只有當前名單，歷史結果會標示 survivorship bias；股息現金流目前不模擬。
 
-`POST /api/backtest/grid` 可批次執行同步日期網格，`runId` 相同且設定相同時可從 SQLite checkpoint 繼續；設定不同會拒絕重用。`GET /api/backtest/runs/<run_id>` 讀取已保存的 manifest/result。資料庫預設為 `instance/backtest_runs.sqlite3`，可用 `BACKTEST_RUN_DB` 指向持久磁碟路徑。容器部署請掛載該資料庫目錄以保留 checkpoint。回測使用共用 UTC cutoff、預設每日再平衡、0.10% 手續費與 0.05% 滑價；區域 benchmark 映射與來源覆蓋限制會隨結果保存。
+`POST /api/backtest/grid` 可批次執行同步日期網格，`runId` 相同且設定相同時可從 SQLite checkpoint 繼續；設定不同會拒絕重用。`GET /api/backtest/runs/<run_id>` 讀取已保存的 manifest/result。資料庫預設為 `instance/backtest_runs.sqlite3`；Docker Compose 將 `./instance` 掛載到 `/app/instance`，並設定 `BACKTEST_RUN_DB=/app/instance/backtest_runs.sqlite3`，讓續跑資料在容器替換後仍保留。首次部署會在停止舊 API 後遷移既有 SQLite run store；`instance/` 不會複製進映像。回測使用共用 UTC cutoff、預設每日再平衡、0.10% 手續費與 0.05% 滑價；區域 benchmark 映射與來源覆蓋限制會隨結果保存。`selectedAnalysts` 必須是 analyst registry 中的 key；未知 key 或非陣列值會在執行前回 HTTP 400。
 
 ```bash
 curl -X POST http://localhost:6000/api/backtest/grid \
   -H 'Content-Type: application/json' \
-  -d '{"runId":"example-2026-01","tickers":["AAPL","2330.TW"],"startDate":"2026-01-05","endDate":"2026-01-30","initialCash":100000}'
+  -d '{"runId":"example-2026-01","tickers":["AAPL","2330.TW"],"startDate":"2026-01-05","endDate":"2026-01-30","cutoffTimeUtc":"23:59:59Z","selectedAnalysts":["technical_analyst"],"initialCash":100000}'
 curl http://localhost:6000/api/backtest/runs/example-2026-01
 ```
 
@@ -130,6 +130,8 @@ docker run -d --name nice_jemison \
   -v $(pwd)/src:/app/src \
   -v $(pwd)/webui2.py:/app/webui2.py \
   -v $(pwd)/static:/app/static \
+  -v $(pwd)/instance:/app/instance \
+  -e BACKTEST_RUN_DB=/app/instance/backtest_runs.sqlite3 \
   --restart always \
   -p 6000:6000 \
   ai-hedge-fund-api
@@ -140,7 +142,7 @@ docker compose up -d
 
 ### 使用 GHCR 預建映像
 
-GitHub Actions 會在 `main` 有程式碼異動時建置並發布 `latest` 與目前 `yfinance.version` 標籤至 GHCR，接著透過 SSH 在 `dns.glsoft.ai` 拉取程式碼、於遠端主機建置並重啟 API。部署後會驗證 `/api/health` 和 `/api/backtest/grid` 入參檢查。此流程需要在 GitHub Actions Secrets 設定 `PRODUCTION_DEPLOY_KEY`（部署專用 SSH 私鑰）；排程仍會檢查 yfinance 更新。可用 `AI_HEDGE_FUND_IMAGE` 指定 Compose 使用的映像；未設定時仍會使用主機本機建置的 `ai-hedge-fund-api:latest`。
+GitHub Actions 會在 `main` 有程式碼異動時建置並發布 `latest` 與目前 `yfinance.version` 標籤至 GHCR，並在映像內執行 `pytest -q tests`。測試通過後，工作流透過 SSH 在 `dns.glsoft.ai` 拉取程式碼、於遠端主機建置並重啟 API。部署後會驗證 `/api/health` 和 `/api/backtest/grid` 對無效 analyst key 的 HTTP 400 回應。Compose 會把 `./instance` 掛載到 `/app/instance`，保留 SQLite 回測快照與 checkpoints。此流程需要在 GitHub Actions Secrets 設定 `PRODUCTION_DEPLOY_KEY`（部署專用 SSH 私鑰）；排程仍會檢查 yfinance 更新。可用 `AI_HEDGE_FUND_IMAGE` 指定 Compose 使用的映像；未設定時仍會使用主機本機建置的 `ai-hedge-fund-api:latest`。
 
 ```bash
 # 拉取目前 latest 並以預建映像啟動（不進行本機建置）

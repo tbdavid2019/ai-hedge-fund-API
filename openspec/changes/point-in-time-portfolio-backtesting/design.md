@@ -47,9 +47,17 @@ Accept a top-level `portfolio` object with `as_of`, `cash`, cash `currency`, and
 
 Use a local SQLite run store (built-in Python support) for the run manifest, normalized data snapshots, and per-ticker/date decisions. Store a fingerprint of the date grid, UTC cutoff, tickers, model/provider, analyst selection, starting portfolio, point-in-time mode, benchmark map, rebalance policy, and cost assumptions. Materialize and persist the full run's normalized point-in-time data and source/version identifiers before processing its first decision session. A resume with a mismatched run fingerprint must fail; all sessions reuse the saved snapshots even if a provider later revises its history. Commit each completed session's ticker decisions and resulting portfolio state together so interruption does not leave a partially applied multi-ticker batch. Keep run data outside source-controlled registry data and make the database location configurable for persistent deployment storage.
 
+Production Compose deployments set `BACKTEST_RUN_DB` to `/app/instance/backtest_runs.sqlite3` and bind-mount the host `instance/` directory at `/app/instance`. On the first deployment, stop the old API container before copying its SQLite database (including any WAL state) to the host path; then replace the container and verify old runs remain readable. Exclude `instance/` from the image build context. This makes the run store survive container replacement and keeps generated database files outside version control.
+
 Store the model output and normalized inputs/provenance for completed cells. A resumed run reuses completed cells; a newly executed cell can still vary because an LLM provider may be nondeterministic.
 
 **Alternative considered:** Store only a JSON/CSV summary. A summary cannot safely identify completed cells or prevent a changed configuration from reusing stale results.
+
+### Validate analyst selections at the API boundary
+
+Validate `selectedAnalysts` as an array of keys in the shared analyst registry before starting synchronous, asynchronous, or backtest work. Return HTTP 400 with the unknown keys; never allow workflow construction to silently skip every requested analyst and return an empty successful result. An empty array retains the existing documented behavior of selecting all analysts.
+
+**Alternative considered:** Allow workflow construction to warn and continue. This can produce a completed HTTP 200 response without running the requested analysis.
 
 ### Report benchmark-relative results with an explicit fallback
 
