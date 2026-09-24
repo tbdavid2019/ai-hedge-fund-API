@@ -8,7 +8,19 @@ if [[ "${AI_HEDGE_FUND_SKIP_GIT_PULL:-0}" != "1" ]]; then
   git pull --ff-only origin main
 fi
 
-docker compose up -d --build --no-deps ai-hedge-fund-api
+docker compose build ai-hedge-fund-api
+
+if docker inspect nice_jemison >/dev/null 2>&1; then
+  compose_service="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.service" }}' nice_jemison)"
+  if [[ "$compose_service" != "ai-hedge-fund-api" ]]; then
+    docker stop nice_jemison
+    legacy_name="nice_jemison_pre_compose_$(date +%Y%m%d%H%M%S)"
+    docker rename nice_jemison "$legacy_name"
+    echo "Preserved the previous unmanaged container as $legacy_name"
+  fi
+fi
+
+docker compose up -d --no-build --no-deps ai-hedge-fund-api
 
 for attempt in $(seq 1 60); do
   if curl --fail --silent --show-error --max-time 3 http://localhost:6000/api/health > /tmp/ai-hedge-fund-health.json; then

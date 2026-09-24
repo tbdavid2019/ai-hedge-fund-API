@@ -16,6 +16,7 @@ services:
       - ./src:/app/src
       - ./webui2.py:/app/webui2.py
       - ./static:/app/static
+      - ./data:/app/data
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     networks:
