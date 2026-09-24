@@ -18,7 +18,9 @@
   "paths": {
     "/api/analysis": {
       "post": {
-        "tags": ["Analysis"],
+        "tags": [
+          "Analysis"
+        ],
         "summary": "執行股票分析與圓桌會議",
         "description": "使用指定的 AI 分析師對股票進行全方位投資分析，並可選擇啟用多輪圓桌會議辯論達成共識決策。",
         "operationId": "runAnalysis",
@@ -34,7 +36,13 @@
                   "summary": "多輪圓桌會議完整分析",
                   "value": {
                     "tickers": "TSLA,NVDA",
-                    "selectedAnalysts": ["warren_buffett", "cathie_wood", "michael_burry", "wsb", "technical_analyst"],
+                    "selectedAnalysts": [
+                      "warren_buffett",
+                      "cathie_wood",
+                      "michael_burry",
+                      "wsb",
+                      "technical_analyst"
+                    ],
                     "enableRoundTable": true,
                     "roundTableRounds": 2
                   }
@@ -43,7 +51,11 @@
                   "summary": "單一股票分析",
                   "value": {
                     "tickers": "TSLA",
-                    "selectedAnalysts": ["warren_buffett", "peter_lynch", "michael_burry"]
+                    "selectedAnalysts": [
+                      "warren_buffett",
+                      "peter_lynch",
+                      "michael_burry"
+                    ]
                   }
                 }
               }
@@ -76,7 +88,9 @@
     },
     "/api/round_table": {
       "post": {
-        "tags": ["Round Table"],
+        "tags": [
+          "Round Table"
+        ],
         "summary": "獨立執行多輪圓桌會議辯論",
         "description": "傳入各分析師預先分析之訊號，進行多輪跨流派交鋒辯論並生成最終委員會共識決策。",
         "operationId": "runRoundTable",
@@ -91,13 +105,25 @@
                 "tickers": "NVDA",
                 "analystSignals": {
                   "warren_buffett": {
-                    "NVDA": {"signal": "neutral", "confidence": 60, "reasoning": "強大護城河但估值偏高"}
+                    "NVDA": {
+                      "signal": "neutral",
+                      "confidence": 60,
+                      "reasoning": "強大護城河但估值偏高"
+                    }
                   },
                   "cathie_wood": {
-                    "NVDA": {"signal": "bullish", "confidence": 90, "reasoning": "AI 算力基礎設施爆發式增長"}
+                    "NVDA": {
+                      "signal": "bullish",
+                      "confidence": 90,
+                      "reasoning": "AI 算力基礎設施爆發式增長"
+                    }
                   },
                   "michael_burry": {
-                    "NVDA": {"signal": "bearish", "confidence": 75, "reasoning": "客戶資本支出可持續性存疑，估值過熱"}
+                    "NVDA": {
+                      "signal": "bearish",
+                      "confidence": 75,
+                      "reasoning": "客戶資本支出可持續性存疑，估值過熱"
+                    }
                   }
                 },
                 "modelName": "gpt-4o",
@@ -127,7 +153,9 @@
     },
     "/api/health": {
       "get": {
-        "tags": ["Health"],
+        "tags": [
+          "Health"
+        ],
         "summary": "健康檢查",
         "description": "檢查 API 伺服器是否正常運行",
         "operationId": "healthCheck",
@@ -158,13 +186,81 @@
           }
         }
       }
+    },
+    "/api/backtest/grid": {
+      "post": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Run or resume a synchronized point-in-time backtest grid",
+        "operationId": "runBacktestGrid",
+        "description": "Persists point-in-time source snapshots and resumable daily portfolio sessions in SQLite. Defaults to a shared UTC cutoff, daily rebalancing, 0.10% transaction fees and 0.05% slippage.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BacktestGridRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Run result or resumed result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Run failure"
+          }
+        }
+      }
+    },
+    "/api/backtest/runs/{run_id}": {
+      "get": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "Get a backtest run manifest and saved result",
+        "operationId": "getBacktestRun",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saved run"
+          },
+          "404": {
+            "description": "Run not found"
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
       "AnalysisRequest": {
         "type": "object",
-        "required": ["tickers", "modelName"],
+        "required": [
+          "tickers",
+          "modelName"
+        ],
         "properties": {
           "tickers": {
             "type": "string",
@@ -192,7 +288,8 @@
                 "sentiment_analyst",
                 "valuation_analyst"
               ]
-            },
+            }
+          },
           "enableRoundTable": {
             "type": "boolean",
             "description": "是否在分析師分析後啟用多輪圓桌會議辯論",
@@ -211,6 +308,81 @@
             "default": 100000,
             "example": 100000
           },
+          "portfolio": {
+            "type": "object",
+            "description": "Optional explicit portfolio snapshot. Its cash overrides initialCash. Snapshot dates more than 7 days before endDate are rejected. Cross-currency positions require a Yahoo Finance historical FX close available by as_of.",
+            "required": [
+              "as_of",
+              "cash",
+              "currency",
+              "positions"
+            ],
+            "properties": {
+              "as_of": {
+                "type": "string",
+                "format": "date",
+                "description": "Portfolio snapshot date; must not be after endDate and must be no more than 7 days old."
+              },
+              "cash": {
+                "type": "number",
+                "minimum": 0
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{3}$",
+                "description": "ISO 4217 cash currency."
+              },
+              "positions": {
+                "type": "array",
+                "description": "An empty array means the portfolio is explicitly flat.",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "ticker",
+                    "quantity",
+                    "average_entry_price",
+                    "currency"
+                  ],
+                  "properties": {
+                    "ticker": {
+                      "type": "string"
+                    },
+                    "quantity": {
+                      "type": "number",
+                      "description": "Signed shares: positive is long; negative is short."
+                    },
+                    "average_entry_price": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "currency": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z]{3}$",
+                      "description": "ISO 4217 trading currency."
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "as_of": "2026-09-24",
+              "cash": 50000,
+              "currency": "USD",
+              "positions": [
+                {
+                  "ticker": "AAPL",
+                  "quantity": 10,
+                  "average_entry_price": 180,
+                  "currency": "USD"
+                }
+              ]
+            }
+          },
+          "pointInTime": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable strict historical data filtering. Records without verified publication/availability times are excluded and reported in point_in_time coverage."
+          },
           "startDate": {
             "type": "string",
             "format": "date",
@@ -225,7 +397,9 @@
       },
       "RoundTableRequest": {
         "type": "object",
-        "required": ["tickers"],
+        "required": [
+          "tickers"
+        ],
         "properties": {
           "tickers": {
             "type": "string",
@@ -256,6 +430,10 @@
             "type": "object",
             "description": "各分析師的獨立分析訊號"
           },
+          "point_in_time": {
+            "type": "object",
+            "description": "Present when pointInTime=true; includes the decision cutoff, source coverage, exclusions, and current-universe survivorship-bias disclosure."
+          },
           "round_table": {
             "type": "object",
             "description": "多輪圓桌會議辯論與共識結論"
@@ -272,6 +450,77 @@
           "traceback": {
             "type": "string",
             "description": "錯誤堆疊追蹤"
+          }
+        }
+      },
+      "BacktestGridRequest": {
+        "type": "object",
+        "required": [
+          "runId",
+          "tickers",
+          "startDate",
+          "endDate"
+        ],
+        "properties": {
+          "runId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]{1,100}$"
+          },
+          "tickers": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "cutoffTimeUtc": {
+            "type": "string",
+            "default": "16:00:00Z"
+          },
+          "initialCash": {
+            "type": "number",
+            "minimum": 0,
+            "default": 100000
+          },
+          "portfolio": {
+            "$ref": "#/components/schemas/AnalysisRequest/properties/portfolio"
+          },
+          "dailyRebalancePolicy": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "none"
+            ],
+            "default": "daily"
+          },
+          "transactionFeeRate": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0.001
+          },
+          "slippageRate": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0.0005
+          },
+          "marginRatio": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0.5
           }
         }
       }

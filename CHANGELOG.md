@@ -4,6 +4,18 @@
 
 ---
 
+## 🚀 未發布
+
+### 📊 Point-in-Time 持倉分析與可續跑回測
+- 為日期資料加入業務日期、發布可用時間、來源與 PIT 狀態；新增嚴格 cutoff、來源覆蓋/排除報告與 SEC EDGAR filing metadata adapter。
+- `/api/analysis` 支援有日期的多空持倉、現金幣別與歷史匯率；新增同步日期網格 `/api/backtest/grid`、SQLite 不可變輸入快照/續跑 checkpoints 與 run 查詢端點。
+- 回測加入區域 benchmark、手續費/滑價假設及限制揭露；拆股歷史無法確認時 strict PIT 會排除價格，持倉依分析 cutoff 市價重估；同步更新 OpenAPI、README、AGENTS 與 skill 文件。
+
+### 📦 GHCR 容器映像發布與部署
+- GitHub Actions 使用 `GITHUB_TOKEN` 與 `packages: write` 將 `latest` 及 yfinance 版本標籤發布至 GitHub Container Registry (GHCR)，不再要求 Docker Hub 憑證才能發布。
+- Docker Hub 發布改為可選鏡像；鏡像錯誤會回報，但不會使 GHCR 發布失敗。
+- Docker Compose 新增 `AI_HEDGE_FUND_IMAGE` 映像覆寫，並保留本機建置流程；同步補充 GHCR 拉取、啟動及私人套件登入文件。
+
 ## 🚀 [v2.4.0] - 2026-09-10
 
 ### 🛡️ 1. 全球 7 大市場官方清冊（38,000+ 檔標的）與 SWR 雙線程跨日快取架構

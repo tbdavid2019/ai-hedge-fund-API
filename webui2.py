@@ -22,6 +22,9 @@ from src.main import run_hedge_fund
 from src.agents.round_table import round_table
 from src.llm.models import ModelProvider, get_model_info
 from src.tools.stock_resolver import resolve_ticker, get_company_profile, get_registry_status
+from src.data.portfolio import add_quote_currency_rates, normalize_portfolio_input
+from src.backtest_evaluation import run_backtest_grid
+from src.backtest_store import BacktestRunStore
 
 # 加載 .env 環境變數
 load_dotenv()
@@ -319,7 +322,8 @@ def execute_async_analysis_task(
     model_provider: str,
     is_crypto: bool,
     enable_round_table: bool,
-    round_table_rounds: int
+    round_table_rounds: int,
+    point_in_time: bool = False,
 ):
     """背景執行 AI 投資分析任務"""
     try:
@@ -342,7 +346,8 @@ def execute_async_analysis_task(
             model_provider=model_provider,
             is_crypto=is_crypto,
             enable_round_table=enable_round_table,
-            round_table_rounds=round_table_rounds
+            round_table_rounds=round_table_rounds,
+            point_in_time=point_in_time,
         )
 
         sanitized_result = sanitize_json_output(result)
@@ -448,13 +453,28 @@ def run_analysis():
         end_date = data.get('endDate') or datetime.now().strftime('%Y-%m-%d')
         start_date = data.get('startDate') or (datetime.strptime(end_date, '%Y-%m-%d') - relativedelta(months=3)).strftime('%Y-%m-%d')
 
-        # 初始投資組合
-        portfolio = {
-            "cash": data.get('initialCash', 100000),
-            "positions": {},
-            "cost_basis": {},
-            "realized_gains": {ticker: {"long": 0.0, "short": 0.0} for ticker in ticker_list}
-        }
+        # Preserve the legacy initialCash path unless an explicit portfolio is supplied.
+        legacy_initial_cash = data.get('initialCash', 100000)
+        if "portfolio" in data:
+            if not isinstance(data["portfolio"], dict):
+                raise ValueError("portfolio must be a JSON object")
+            portfolio, portfolio_snapshot = normalize_portfolio_input(
+                data["portfolio"],
+                analysis_cutoff=end_date,
+                resolve_ticker=resolve_ticker,
+                initial_cash=float(legacy_initial_cash),
+            )
+            add_quote_currency_rates(
+                portfolio, list(dict.fromkeys(ticker_list + list(portfolio["positions"]))), end_date[:10]
+            )
+            portfolio["portfolio_snapshot"] = portfolio_snapshot
+        else:
+            portfolio = {
+                "cash": legacy_initial_cash,
+                "positions": {},
+                "cost_basis": {},
+                "realized_gains": {ticker: {"long": 0.0, "short": 0.0} for ticker in ticker_list}
+            }
 
         # 異步非阻塞模式
         if is_async:
@@ -490,7 +510,8 @@ def run_analysis():
                     model_provider,
                     is_crypto,
                     enable_round_table,
-                    round_table_rounds
+                    round_table_rounds,
+                    bool(data.get("pointInTime", False)),
                 ),
                 daemon=True
             )
@@ -520,7 +541,8 @@ def run_analysis():
             model_provider=model_provider,
             is_crypto=is_crypto,
             enable_round_table=enable_round_table,
-            round_table_rounds=round_table_rounds
+            round_table_rounds=round_table_rounds,
+            point_in_time=bool(data.get("pointInTime", False)),
         )
 
         broadcast_log("Analysis completed successfully", "success")
@@ -530,9 +552,84 @@ def run_analysis():
         
         return jsonify(sanitize_json_output(result))
 
+    except ValueError as e:
+        broadcast_log(f"Invalid analysis request: {str(e)}", "error")
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         error_message = f"API Error: {str(e)}"
         broadcast_log(error_message, "error")
+        return jsonify(format_api_error_response(e)), 500
+
+
+@app.route('/api/backtest/grid', methods=['POST'])
+def run_backtest_grid_api():
+    """Run or resume a synchronized point-in-time ticker/date grid evaluation."""
+    try:
+        data = request.get_json() or {}
+        raw_tickers = data.get("tickers", [])
+        if isinstance(raw_tickers, str):
+            raw_tickers = [value.strip() for value in raw_tickers.split(",") if value.strip()]
+        if not isinstance(raw_tickers, list) or not raw_tickers:
+            raise ValueError("tickers must be a non-empty string or array")
+        tickers = list(dict.fromkeys(resolve_ticker(str(value).strip()) for value in raw_tickers if str(value).strip()))
+        if not tickers:
+            raise ValueError("tickers did not contain a resolvable symbol")
+        run_id = str(data.get("runId", "")).strip()
+        if not run_id or len(run_id) > 100 or any(char not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-" for char in run_id):
+            raise ValueError("runId is required and may contain only letters, digits, dot, underscore, or dash")
+        start_date = datetime.strptime(str(data.get("startDate", "")), "%Y-%m-%d").strftime("%Y-%m-%d")
+        end_date = datetime.strptime(str(data.get("endDate", "")), "%Y-%m-%d").strftime("%Y-%m-%d")
+        if start_date >= end_date:
+            raise ValueError("startDate must be before endDate")
+
+        starting_portfolio = None
+        if "portfolio" in data:
+            if not isinstance(data["portfolio"], dict):
+                raise ValueError("portfolio must be a JSON object")
+            starting_portfolio, _ = normalize_portfolio_input(
+                data["portfolio"], analysis_cutoff=start_date,
+                resolve_ticker=resolve_ticker,
+                initial_cash=float(data.get("initialCash", 100000)),
+                max_age_days=None,
+            )
+            if starting_portfolio["as_of"] != start_date:
+                raise ValueError("portfolio.as_of must match startDate for a backtest starting portfolio")
+            unrequested = sorted(set(starting_portfolio["positions"]) - set(tickers))
+            if unrequested:
+                raise ValueError(f"portfolio positions must be included in tickers: {', '.join(unrequested)}")
+            add_quote_currency_rates(starting_portfolio, tickers, start_date)
+
+        model_name = data.get("modelName") or os.getenv("DEFAULT_MODEL", "openai/gpt-oss-20b")
+        model_provider = infer_model_provider(model_name, data.get("modelProvider") or os.getenv("DEFAULT_MODEL_PROVIDER", "Groq"))
+        result = run_backtest_grid(
+            run_id=run_id, tickers=tickers, start_date=start_date, end_date=end_date,
+            cutoff_time_utc=str(data.get("cutoffTimeUtc", "16:00:00Z")),
+            agent=run_hedge_fund,
+            initial_cash=float(data.get("initialCash", 100000)),
+            starting_portfolio=starting_portfolio,
+            model_name=model_name, model_provider=model_provider,
+            selected_analysts=data.get("selectedAnalysts", []),
+            is_crypto=bool(data.get("isCrypto", False)),
+            daily_rebalance_policy=str(data.get("dailyRebalancePolicy", "daily")),
+            transaction_fee_rate=float(data.get("transactionFeeRate", 0.001)),
+            slippage_rate=float(data.get("slippageRate", 0.0005)),
+            margin_ratio=float(data.get("marginRatio", 0.5)),
+        )
+        return jsonify(sanitize_json_output(result))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify(format_api_error_response(e)), 500
+
+
+@app.route('/api/backtest/runs/<run_id>', methods=['GET'])
+def get_backtest_grid_status(run_id):
+    try:
+        run = BacktestRunStore().get_run(run_id)
+        if not run:
+            return jsonify({"error": "run not found"}), 404
+        return jsonify(sanitize_json_output(run))
+    except Exception as e:
         return jsonify(format_api_error_response(e)), 500
 
 

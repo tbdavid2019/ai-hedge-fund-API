@@ -20,6 +20,7 @@ from utils.analysts import ANALYST_ORDER, get_analyst_nodes
 from utils.progress import progress
 from llm.models import LLM_ORDER, get_model_info
 from agents.round_table import round_table
+from data.point_in_time import date_cutoff_utc, point_in_time_context
 
 import argparse
 from datetime import datetime
@@ -57,6 +58,9 @@ def run_hedge_fund(
     is_crypto: bool = False,
     enable_round_table: bool = False,
     round_table_rounds: int = 2,
+    point_in_time: bool = False,
+    point_in_time_cutoff: str | None = None,
+    point_in_time_snapshots: dict | None = None,
 ):
     # Start progress tracking
     progress.start()
@@ -80,6 +84,7 @@ def run_hedge_fund(
                 "portfolio": portfolio,
                 "analyst_signals": {},
                 "is_crypto": is_crypto,
+                "_point_in_time": None,
             },
             "metadata": {
                 "show_reasoning": show_reasoning,
@@ -89,8 +94,28 @@ def run_hedge_fund(
             },
         }
 
-        # Run the workflow
-        result = app.invoke(initial_state)
+        # Run historical decisions inside a shared strict cutoff context. In a
+        # multi-market request, the calendar-date cutoff is shared in UTC.
+        if point_in_time:
+            cutoff = point_in_time_cutoff or date_cutoff_utc(
+                end_date, tickers[0] if len(tickers) == 1 else None
+            ).isoformat().replace("+00:00", "Z")
+            shared_coverage: dict = {}
+            initial_state["data"]["_point_in_time"] = {
+                "cutoff": cutoff,
+                "coverage": shared_coverage,
+                "snapshots": point_in_time_snapshots or {},
+            }
+            result = app.invoke(initial_state)
+            pit_report = {
+                "decision_cutoff": cutoff,
+                "strict": True,
+                "sources": list(shared_coverage.values()),
+                "historical_universe": "current_registry_survivorship_biased",
+            }
+        else:
+            result = app.invoke(initial_state)
+            pit_report = None
         
         # Stop progress tracking
         progress.stop()
@@ -115,6 +140,8 @@ def run_hedge_fund(
             "decisions": portfolio_decision,
             "analyst_signals": result["data"]["analyst_signals"],
         }
+        if pit_report:
+            response_dict["point_in_time"] = pit_report
 
         # Run Multi-Round Round Table if enabled
         if enable_round_table:
@@ -167,14 +194,14 @@ def create_workflow(selected_analysts=None):
     for analyst_key in selected_analysts:
         if analyst_key in analyst_nodes:
             node_name, node_func = analyst_nodes[analyst_key]
-            workflow.add_node(node_name, node_func)
+            workflow.add_node(node_name, _with_point_in_time(node_func))
             workflow.add_edge("start_node", node_name)
         else:
             print(f"{Fore.RED}Warning: Analyst {analyst_key} not found in configuration{Style.RESET_ALL}")
     
     # Always add risk and portfolio management
-    workflow.add_node("risk_management_agent", risk_management_agent)
-    workflow.add_node("portfolio_management_agent", portfolio_management_agent)
+    workflow.add_node("risk_management_agent", _with_point_in_time(risk_management_agent))
+    workflow.add_node("portfolio_management_agent", _with_point_in_time(portfolio_management_agent))
     
     # Connect all analysts to risk management
     for analyst_key in selected_analysts:
@@ -188,6 +215,21 @@ def create_workflow(selected_analysts=None):
 
     workflow.set_entry_point("start_node")
     return workflow
+
+
+def _with_point_in_time(node_func):
+    """Install the same strict cutoff inside each LangGraph worker thread."""
+    def wrapped(state):
+        data = state.get("data", {})
+        context = data.get("_point_in_time")
+        if not context:
+            return node_func(state)
+        with point_in_time_context(
+            context["cutoff"], strict=True,
+            coverage=context["coverage"], snapshots=context.get("snapshots", {}),
+        ):
+            return node_func(state)
+    return wrapped
 
 
 def run_all_analysts_with_round_table(tickers, start_date, end_date, portfolio, show_reasoning, model_name, model_provider, is_crypto=False):

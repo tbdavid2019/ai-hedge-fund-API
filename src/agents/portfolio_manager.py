@@ -148,6 +148,7 @@ def generate_trading_decision(
               - signals_by_ticker: dictionary of ticker → signals
               - max_shares: maximum shares allowed per ticker
               - portfolio_cash: current cash in portfolio
+              - portfolio_cash_currency: base currency of portfolio cash
               - portfolio_positions: current positions (both long and short)
               - current_prices: current prices for each ticker
               - margin_requirement: current margin requirement for short positions
@@ -167,6 +168,7 @@ def generate_trading_decision(
               {max_shares}
 
               Portfolio Cash: {portfolio_cash}
+              Portfolio Cash Currency: {portfolio_cash_currency}
               Current Positions: {portfolio_positions}
               Current Margin Requirement: {margin_requirement}
 
@@ -197,6 +199,7 @@ def generate_trading_decision(
             "current_prices": json.dumps(current_prices, indent=2),
             "max_shares": json.dumps(max_shares, indent=2),
             "portfolio_cash": f"{portfolio.get('cash', 0):.2f}",
+            "portfolio_cash_currency": portfolio.get("cash_currency", "USD"),
             "portfolio_positions": json.dumps(portfolio.get('positions', {}), indent=2),
             "margin_requirement": f"{portfolio.get('margin_requirement', 0):.2f}",
         }

@@ -46,3 +46,7 @@ Thumbs.db
 /webui/.next
 /webui/node_modules
 myenv/
+
+# Resumable historical evaluation database
+instance/
+*.sqlite3

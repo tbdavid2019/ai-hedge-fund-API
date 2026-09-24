@@ -61,8 +61,23 @@ Execute deep investment analysis across selected AI investor personas with optio
 | `enableRoundTable` | boolean | ❌ | `false` | Enable multi-round debate committee after analyst signals |
 | `roundTableRounds` | integer | ❌ | `2` | Number of debate rounds (1 to 3) |
 | `initialCash` | number | ❌ | `100000` | Starting portfolio cash |
+| `portfolio` | object | ❌ | — | Optional dated holdings and cash; its `cash` takes precedence over `initialCash` |
+| `pointInTime` | boolean | ❌ | `false` | Enable strict historical cutoff filtering and return source coverage/exclusions |
 | `startDate` | string | ❌ | 3 months ago | Historical start date (`YYYY-MM-DD`) |
 | `endDate` | string | ❌ | Today | Analysis end date (`YYYY-MM-DD`) |
+
+`portfolio` requires `as_of` (`YYYY-MM-DD`), non-negative `cash`, `currency` (ISO 4217), and `positions` (array; empty means flat). Each position requires `ticker`, signed `quantity` (positive long, negative short), non-negative `average_entry_price`, and trading `currency`. A snapshot must not be after `endDate` or more than 7 calendar days old. Cross-currency positions use a historical Yahoo Finance FX close no later than `as_of`; the request is rejected when no suitable rate is available. Omit `portfolio` to preserve legacy `initialCash` behavior.
+
+Strict point-in-time mode uses verified publication/availability time, not report period or event date. News without a publication timestamp and financial data without filing-level availability metadata are excluded with source-specific reasons. The SEC EDGAR adapter uses filing acceptance time plus a conservative dissemination buffer for eligible US issuers and requires `SEC_USER_AGENT`; this filing metadata does not make Yahoo financial values point-in-time verified. Current-only security registries are reported as survivorship-biased. Daily price inputs use unadjusted OHLC; future splits are reversed, and dividend cash flows are not modeled in this analysis endpoint.
+
+#### Resumable backtest grid
+
+- `POST /api/backtest/grid`: accepts `runId`, `tickers`, `startDate`, `endDate`; optional `portfolio`, `initialCash`, `cutoffTimeUtc` (shared UTC cutoff), `dailyRebalancePolicy` (`daily` or `none`), `transactionFeeRate` (default `0.001`), and `slippageRate` (default `0.0005`).
+- `GET /api/backtest/runs/<run_id>`: reads the persisted manifest and result.
+- Reusing a `runId` resumes the original immutable data snapshots only when the configuration fingerprint matches. SQLite defaults to `instance/backtest_runs.sqlite3`; set `BACKTEST_RUN_DB` to a persistent mounted path in container deployments.
+- Grid results disclose source coverage, excluded unknown timestamps, benchmark mapping/version, fees, slippage, current-universe survivorship bias, and that dividends are not modeled.
+
+Example: `{"runId":"trial-1","tickers":["AAPL","2330.TW"],"startDate":"2026-01-05","endDate":"2026-01-30","initialCash":100000}`
 
 #### Response Format (JSON):
 ```json
@@ -211,4 +226,3 @@ This repository ships with a built-in standard **MCP Server** ([`mcp_server.py`]
 - **Zero `NaN` / `Infinity` Guarantee**: All numerical metrics across all 14 analysts (e.g. `momentum_6m`, `historical_volatility`, `volatility_z_score`, `z_score`, `atr_ratio`, `dcf_value`, etc.) are strictly sanitized to standard JSON floats or `null`.
 - **Node.js & TypeScript 100% Safe**: Never triggers `SyntaxError: Unexpected token 'N' (NaN is not valid JSON)` when executing `JSON.parse()` in Node.js, Next.js API routes (`route.ts`), Python, Go, or browser clients.
 - **Graceful Insufficient Data Handling**: When historical price days are shorter than rolling indicator windows (e.g. calculating 6-month momentum on a 3-month timeframe), indicators automatically use `min_periods=1` and fallback to valid numbers or `null`.
-

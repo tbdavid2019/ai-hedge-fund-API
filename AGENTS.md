@@ -74,6 +74,13 @@ ai-hedge-fund-API/
 │   ├── swagger.json          # OpenAPI 3.0.3 specification
 │   └── skill.md              # Static skill guide served by Flask
 └── src/
+    ├── backtest_store.py    # SQLite manifests, immutable snapshots, resumable sessions and ticker/date cells
+    ├── backtest_evaluation.py # Point-in-time synchronized portfolio/date-grid evaluator
+    ├── data/
+    │   ├── models.py        # Dated data metadata: business date, availability, source, PIT status
+    │   ├── point_in_time.py # Strict availability filtering, cutoff and coverage reports
+    │   └── portfolio.py     # Portfolio snapshot validation and historical FX normalization
+    ├── tools/sec_edgar.py   # SEC filing metadata with acceptance/public availability distinction
     ├── main.py               # LangGraph workflow compiler & run_hedge_fund() orchestrator
     ├── graph/
     │   └── state.py          # AgentState TypedDict definition
@@ -194,7 +201,7 @@ python webui2.py
 
 ### Docker Container Management (on Server)
 ```bash
-# Build image
+# Local build (default Compose behavior)
 docker build --network=host -t ai-hedge-fund-api .
 
 # Run / restart container with volume mount for hot reloading and Watchtower label
@@ -209,9 +216,15 @@ docker run -d --name nice_jemison \
   -p 6000:6000 \
   ai-hedge-fund-api
 
-# Or use docker-compose to launch both API and Watchtower daemon
+# Or use docker-compose to launch both API and Watchtower daemon from a local build
 docker compose up -d
+
+# Select and run a prebuilt GHCR image without building locally
+AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose pull ai-hedge-fund-api
+AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose up -d --no-build
 ```
+
+`docker-compose.yml` accepts `AI_HEDGE_FUND_IMAGE`; when unset, it retains the local `ai-hedge-fund-api:latest` build path. GitHub Actions publishes `latest` and the current `yfinance.version` tag to GHCR using the repository's `GITHUB_TOKEN` with `packages: write`. Docker Hub publishing is an optional mirror that uses `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`; their absence does not block GHCR publishing. If the GHCR package is private, authenticate with a GitHub token that has `read:packages` before pulling.
 
 ### 🗼 Watchtower & yfinance Automated Maintenance
 ```bash
@@ -242,6 +255,16 @@ curl -X POST "http://localhost:6000/api/analysis" \
 ---
 
 ## 📋 8. Mandatory AI Coding Agent Workflow Rules (AI Agent 必守開發規則)
+
+### Point-in-Time analysis and resumable grid runs
+
+- `POST /api/analysis` accepts optional `portfolio` and `pointInTime`; legacy requests keep `initialCash` behavior. Explicit portfolio cash overrides `initialCash`.
+- `POST /api/backtest/grid` runs or resumes a synchronized UTC ticker/date grid. Reusing `runId` requires an identical configuration fingerprint. Defaults: `dailyRebalancePolicy=daily`, `transactionFeeRate=0.001`, `slippageRate=0.0005`.
+- `GET /api/backtest/runs/<run_id>` reads the saved run manifest and result.
+- SQLite path defaults to `instance/backtest_runs.sqlite3`; override with `BACKTEST_RUN_DB` and mount its directory as persistent storage in containers.
+- Strict PIT mode excludes unknown availability timestamps. Yahoo financial statement values remain unverified even when SEC filing metadata is available. Current security registries are survivorship biased; dividends are not modeled.
+- Configure `SEC_USER_AGENT` with application identity/contact to query SEC submissions metadata. Its acceptance time plus a conservative 3-minute buffer is used as the availability estimate.
+
 
 AI Coding Agents (Antigravity, Claude, Cursor, Devin 等) 在對本倉庫進行任何代碼修改時，**必須嚴格遵守以下開發流程與安全鐵律**：
 

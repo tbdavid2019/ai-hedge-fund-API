@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ai-hedge-fund-api:latest
+    image: ${AI_HEDGE_FUND_IMAGE:-ai-hedge-fund-api:latest}
     container_name: nice_jemison
     restart: always
     ports:

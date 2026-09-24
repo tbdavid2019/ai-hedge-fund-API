@@ -8,6 +8,10 @@ class Price(BaseModel):
     low: float
     volume: int
     time: str
+    business_date: str | None = None
+    available_at: str | None = None
+    source_id: str = "unknown"
+    point_in_time_status: str = "unknown"
 
 
 class PriceResponse(BaseModel):
@@ -18,6 +22,10 @@ class PriceResponse(BaseModel):
 class FinancialMetrics(BaseModel):
     ticker: str
     report_period: str
+    business_date: str | None = None
+    available_at: str | None = None
+    source_id: str = "unknown"
+    point_in_time_status: str = "unknown"
     period: str
     currency: str
     market_cap: float | None
@@ -68,6 +76,10 @@ class FinancialMetricsResponse(BaseModel):
 class LineItem(BaseModel):
     ticker: str
     report_period: str
+    business_date: str | None = None
+    available_at: str | None = None
+    source_id: str = "unknown"
+    point_in_time_status: str = "unknown"
     period: str
     currency: str
 
@@ -100,6 +112,10 @@ class InsiderTrade(BaseModel):
     shares_owned_after_transaction: float | None
     security_title: str | None
     filing_date: str
+    business_date: str | None = None
+    available_at: str | None = None
+    source_id: str = "unknown"
+    point_in_time_status: str = "unknown"
 
 
 class InsiderTradeResponse(BaseModel):
@@ -112,6 +128,10 @@ class CompanyNews(BaseModel):
     author: str
     source: str
     date: str
+    business_date: str | None = None
+    available_at: str | None = None
+    source_id: str = "unknown"
+    point_in_time_status: str = "unknown"
     url: str
     sentiment: str | None = None
 

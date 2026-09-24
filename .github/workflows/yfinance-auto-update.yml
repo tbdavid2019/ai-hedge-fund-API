@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
 
     steps:
       - name: 📥 Checkout Repository
@@ -47,19 +48,10 @@ jobs:
 
       - name: 🏷️ Set Build Decision
         id: build_decision
-        env:
-          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           HAS_UPDATE="${{ steps.check_yfinance.outputs.has_update }}"
           FORCE="${{ inputs.force_rebuild }}"
           EVENT="${{ github.event_name }}"
-          
-          if [ -z "$DOCKERHUB_USER" ] || [ -z "$DOCKERHUB_PASS" ]; then
-            echo "⚠️ Notice: DOCKERHUB_USERNAME or DOCKERHUB_TOKEN secrets are not configured in GitHub Secrets. Skipping image push to Docker Hub."
-            echo "should_build=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
           
           if [ "$HAS_UPDATE" = "true" ] || [ "$FORCE" = "true" ]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
@@ -69,18 +61,25 @@ jobs:
             echo "✨ yfinance is up to date (${{ steps.check_yfinance.outputs.current_version }}). No build needed."
           fi
 
+      - name: 🏷️ Resolve GHCR image name
+        id: image
+        if: steps.build_decision.outputs.should_build == 'true'
+        run: |
+          echo "ghcr_image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ai-hedge-fund-api" >> "$GITHUB_OUTPUT"
+
       - name: 🐳 Set up Docker Buildx
         if: steps.build_decision.outputs.should_build == 'true'
         uses: docker/setup-buildx-action@v3
 
-      - name: 🔑 Log in to Docker Hub
+      - name: 🔑 Log in to GitHub Container Registry
         if: steps.build_decision.outputs.should_build == 'true'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🛠️ Build and Push Docker Image (Fresh without cache)
+      - name: 🛠️ Build and Push Image to GHCR (Fresh without cache)
         if: steps.build_decision.outputs.should_build == 'true'
         uses: docker/build-push-action@v5
         with:
@@ -89,8 +88,73 @@ jobs:
           push: true
           no-cache: true
           tags: |
-            tbdavid2019/ai-hedge-fund-api:latest
-            tbdavid2019/ai-hedge-fund-api:${{ steps.check_yfinance.outputs.latest_version }}
+            ${{ steps.image.outputs.ghcr_image }}:latest
+            ${{ steps.image.outputs.ghcr_image }}:${{ steps.check_yfinance.outputs.latest_version }}
+
+      - name: 🔎 Check optional Docker Hub mirror credentials
+        id: dockerhub_credentials
+        if: steps.build_decision.outputs.should_build == 'true'
+        env:
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DOCKERHUB_USER" ] && [ -n "$DOCKERHUB_PASS" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Docker Hub credentials are not configured; the image was published to GHCR only."
+          fi
+
+      - name: 📦 Install Skopeo for optional registry mirror
+        id: skopeo_install
+        if: steps.dockerhub_credentials.outputs.configured == 'true'
+        continue-on-error: true
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes skopeo
+
+      - name: 🔐 Authenticate Skopeo to GHCR
+        id: ghcr_source_login
+        if: steps.dockerhub_credentials.outputs.configured == 'true' && steps.skopeo_install.outcome == 'success'
+        continue-on-error: true
+        env:
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | skopeo login --authfile "$RUNNER_TEMP/ghcr-auth.json" --username "$GHCR_USERNAME" --password-stdin ghcr.io
+
+      - name: 🔐 Authenticate Skopeo to Docker Hub
+        id: dockerhub_login
+        if: steps.dockerhub_credentials.outputs.configured == 'true' && steps.skopeo_install.outcome == 'success'
+        continue-on-error: true
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          printf '%s' "$DOCKERHUB_TOKEN" | skopeo login --authfile "$RUNNER_TEMP/dockerhub-auth.json" --username "$DOCKERHUB_USERNAME" --password-stdin docker.io
+
+      - name: 📤 Mirror GHCR image to Docker Hub
+        id: mirror_push
+        if: steps.dockerhub_credentials.outputs.configured == 'true' && steps.ghcr_source_login.outcome == 'success' && steps.dockerhub_login.outcome == 'success'
+        continue-on-error: true
+        env:
+          GHCR_IMAGE: ${{ steps.image.outputs.ghcr_image }}
+          IMAGE_VERSION: ${{ steps.check_yfinance.outputs.latest_version }}
+        run: |
+          skopeo copy --all --preserve-digests \
+            --src-authfile "$RUNNER_TEMP/ghcr-auth.json" \
+            --dest-authfile "$RUNNER_TEMP/dockerhub-auth.json" \
+            "docker://$GHCR_IMAGE:latest" \
+            docker://docker.io/tbdavid2019/ai-hedge-fund-api:latest
+          skopeo copy --all --preserve-digests \
+            --src-authfile "$RUNNER_TEMP/ghcr-auth.json" \
+            --dest-authfile "$RUNNER_TEMP/dockerhub-auth.json" \
+            "docker://$GHCR_IMAGE:$IMAGE_VERSION" \
+            "docker://docker.io/tbdavid2019/ai-hedge-fund-api:$IMAGE_VERSION"
+
+      - name: ⚠️ Report optional Docker Hub mirror failure
+        if: always() && steps.dockerhub_credentials.outputs.configured == 'true' && (steps.skopeo_install.outcome == 'failure' || steps.ghcr_source_login.outcome == 'failure' || steps.dockerhub_login.outcome == 'failure' || steps.mirror_push.outcome == 'failure')
+        run: echo "::warning::Docker Hub mirroring failed. The GHCR image remains published and available."
 
       - name: 📝 Commit Updated yfinance.version (If Updated)
         if: steps.check_yfinance.outputs.has_update == 'true'

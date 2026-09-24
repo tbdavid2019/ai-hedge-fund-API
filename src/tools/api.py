@@ -4,11 +4,13 @@ import numpy as np
 import yfinance as yf
 import requests
 from datetime import datetime, timedelta
+from datetime import timezone
 import json
 from typing import List, Dict, Any, Optional
 from functools import lru_cache
 
 from data.cache import get_cache
+from data.point_in_time import current_point_in_time_context, daily_bar_availability_utc, filter_point_in_time, point_in_time_filter
 from data.models import (
     CompanyNews,
     CompanyNewsResponse,
@@ -28,8 +30,20 @@ try:
 except ImportError:
     from src.tools.stock_resolver import resolve_ticker, get_company_profile
 
+try:
+    from tools.sec_edgar import get_sec_filing_availability as _get_sec_filing_availability
+except ImportError:
+    from src.tools.sec_edgar import get_sec_filing_availability as _get_sec_filing_availability
+
 # Global cache instance
 _cache = get_cache()
+
+
+def get_sec_filings(ticker: str, cutoff: str | datetime | None = None) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Fetch SEC EDGAR filing metadata and enforce acceptance-time cutoff when requested."""
+    filings = _get_sec_filing_availability(ticker)
+    filtered, coverage = filter_point_in_time(filings, cutoff=cutoff, strict=cutoff is not None)
+    return filtered, coverage
 
 # Define API keys and fallback order
 def get_api_keys():
@@ -59,11 +73,53 @@ def _format_ticker_for_yfinance(ticker: str) -> str:
         return ""
     return resolve_ticker(ticker)
 
+
+def _reverse_future_split_adjustments(prices: list[Price], split_series, cutoff_date: str) -> list[Price]:
+    """Undo provider's retrospective split scaling for actions after a PIT cutoff."""
+    if split_series is None:
+        raise ValueError("split history is unavailable; strict point-in-time price bars are excluded")
+    if getattr(split_series, "empty", True):
+        return prices
+    cutoff = datetime.strptime(cutoff_date[:10], "%Y-%m-%d").date()
+    future_splits = []
+    for split_date, ratio in split_series.items():
+        try:
+            split_day = split_date.date() if hasattr(split_date, "date") else datetime.strptime(str(split_date)[:10], "%Y-%m-%d").date()
+            ratio = float(ratio)
+        except (TypeError, ValueError):
+            continue
+        if split_day > cutoff and ratio > 0:
+            future_splits.append((split_day.isoformat(), ratio))
+    if not future_splits:
+        return prices
+
+    adjusted = []
+    for price in prices:
+        factor = 1.0
+        volume_factor = 1.0
+        for split_day, ratio in future_splits:
+            if price.time < split_day:
+                factor *= ratio
+                volume_factor /= ratio
+        if factor == 1.0:
+            adjusted.append(price)
+            continue
+        adjusted.append(price.model_copy(update={
+            "open": price.open * factor,
+            "close": price.close * factor,
+            "high": price.high * factor,
+            "low": price.low * factor,
+            "volume": int(price.volume * volume_factor),
+        }))
+    return adjusted
+
+@point_in_time_filter("price", Price)
 def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = False) -> list[Price]:
     """Fetch price data with multi-source fallback strategy."""
+    pit_context = current_point_in_time_context()
     # Check cache first
     cache_key = f"crypto_{ticker}" if is_crypto else ticker
-    if cached_data := _cache.get_prices(cache_key):
+    if not (pit_context and pit_context.get("strict")) and (cached_data := _cache.get_prices(cache_key)):
         filtered_data = [Price(**price) for price in cached_data if start_date <= price["time"] <= end_date]
         if filtered_data:
             return filtered_data
@@ -84,7 +140,9 @@ def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = Fa
     # Try primary source: Yahoo Finance
     try:
         yf_ticker = yf.Ticker(yf_ticker_str)
-        df = yf_ticker.history(start=start_date, end=exclusive_end_date(end_date))
+        # Use unadjusted OHLC. Retrospective adjusted prices can encode corporate actions
+        # that were not effective at the historical decision time.
+        df = yf_ticker.history(start=start_date, end=exclusive_end_date(end_date), auto_adjust=False)
         
         if df is not None and not df.empty:
             if isinstance(df.columns, pd.MultiIndex):
@@ -109,18 +167,58 @@ def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = Fa
                         high=high_val,
                         low=low_val,
                         volume=vol_val,
-                        time=date_str
+                        time=date_str,
+                        business_date=date_str,
+                        available_at=daily_bar_availability_utc(date_str, ticker),
+                        source_id="yfinance_daily_ohlc",
+                        point_in_time_status="verified",
                     )
                     prices.append(price)
                 except Exception:
                     continue
             
             if prices:
+                if pit_context and pit_context.get("strict"):
+                    try:
+                        split_series = yf_ticker.splits
+                        if split_series is None:
+                            raise ValueError("split history is unavailable")
+                        prices = _reverse_future_split_adjustments(prices, split_series, end_date)
+                        pit_context.setdefault("coverage", {})[f"{ticker}:corporate_actions"] = {
+                            "ticker": ticker,
+                            "data_kind": "corporate_actions",
+                            "source_ids": ["yfinance_split_history"],
+                            "split_events_checked": int(len(split_series)) if split_series is not None else 0,
+                            "dividend_cash_flows": "not_modeled",
+                            "reason": "raw close avoids dividend-adjusted values; dividend cash is not credited in this analysis path",
+                        }
+                    except Exception as action_error:
+                        pit_context.setdefault("coverage", {})[f"{ticker}:corporate_actions"] = {
+                            "ticker": ticker,
+                            "data_kind": "corporate_actions",
+                            "included": 0,
+                            "exclusions": {"action_history_unavailable": 1},
+                            "reason": str(action_error),
+                        }
+                        # Strict mode cannot retain bars if retrospective split adjustments cannot be checked.
+                        return []
                 # Cache the results
-                _cache.set_prices(cache_key, [p.model_dump() for p in prices])
+                if not (pit_context and pit_context.get("strict")):
+                    _cache.set_prices(cache_key, [p.model_dump() for p in prices])
                 return prices
     except Exception as e:
         print(f"Yahoo Finance error for {ticker}: {str(e)}")
+
+    if pit_context and pit_context.get("strict"):
+        pit_context.setdefault("coverage", {})[f"{ticker}:price_fallbacks"] = {
+            "ticker": ticker,
+            "data_kind": "price",
+            "included": 0,
+            "source_ids": ["stockdata_eod", "alpha_vantage_daily_ohlc"],
+            "exclusions": {"corporate_action_basis_unverified": 1},
+            "reason": "strict point-in-time mode will not use fallback histories without verified split adjustment behavior",
+        }
+        return []
     
     # Fallback to StockData.org if Yahoo fails
     try:
@@ -140,12 +238,17 @@ def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = Fa
                             high=float(item["high"]),
                             low=float(item["low"]),
                             volume=int(item["volume"]),
-                            time=item["date"]
+                            time=item["date"],
+                            business_date=item["date"][:10],
+                            available_at=daily_bar_availability_utc(item["date"], ticker),
+                            source_id="stockdata_eod",
+                            point_in_time_status="verified",
                         )
                         prices.append(price)
                     
                     # Cache the results
-                    _cache.set_prices(cache_key, [p.model_dump() for p in prices])
+                    if not (pit_context and pit_context.get("strict")):
+                        _cache.set_prices(cache_key, [p.model_dump() for p in prices])
                     return prices
     except Exception as e:
         print(f"StockData.org error for {ticker}: {str(e)}")
@@ -171,7 +274,11 @@ def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = Fa
                                 high=float(values["2. high"]),
                                 low=float(values["3. low"]),
                                 volume=int(values["6. volume"]),
-                                time=date
+                                time=date,
+                                business_date=date,
+                                available_at=daily_bar_availability_utc(date, ticker),
+                                source_id="alpha_vantage_daily_ohlc",
+                                point_in_time_status="verified",
                             )
                             prices.append(price)
                     
@@ -179,7 +286,8 @@ def get_prices(ticker: str, start_date: str, end_date: str, is_crypto: bool = Fa
                     prices.sort(key=lambda x: x.time, reverse=True)
                     
                     # Cache the results
-                    _cache.set_prices(cache_key, [p.model_dump() for p in prices])
+                    if not (pit_context and pit_context.get("strict")):
+                        _cache.set_prices(cache_key, [p.model_dump() for p in prices])
                     return prices
     except Exception as e:
         print(f"Alpha Vantage error for {ticker}: {str(e)}")
@@ -271,7 +379,11 @@ def get_crypto_prices(ticker: str, start_date: str, end_date: str) -> list[Price
                         high=data["high"],
                         low=data["low"],
                         volume=volume_data.get(date_str, 0),
-                        time=date_str
+                        time=date_str,
+                        business_date=date_str,
+                        available_at=daily_bar_availability_utc(date_str, ticker),
+                        source_id="coincap_daily_ohlc",
+                        point_in_time_status="verified",
                     )
                     prices.append(price_obj)
                 
@@ -287,6 +399,7 @@ def get_crypto_prices(ticker: str, start_date: str, end_date: str) -> list[Price
     # Fallback to other APIs as they were already implemented
     # ... existing code for CoinGecko, CryptoCompare, and Binance ...
 
+@point_in_time_filter("financial_metrics", FinancialMetrics)
 def get_financial_metrics(
     ticker: str,
     end_date: str,
@@ -296,6 +409,26 @@ def get_financial_metrics(
 ) -> list[FinancialMetrics]:
     """Fetch financial metrics from cache or APIs."""
     # Use different approach for crypto
+    pit_context = current_point_in_time_context()
+    if pit_context and pit_context.get("strict") and "." not in ticker:
+        try:
+            filings, filing_coverage = get_sec_filings(ticker, cutoff=pit_context["cutoff"])
+            pit_context.setdefault("coverage", {})[f"{ticker}:sec_filing_metadata"] = {
+                **filing_coverage,
+                "data_kind": "filing_availability_metadata",
+                "filings_available": len(filings),
+                "values_source": "SEC filing dates only; financial values still require a filing-sourced adapter",
+            }
+        except Exception as sec_error:
+            pit_context.setdefault("coverage", {})[f"{ticker}:sec_filing_metadata"] = {
+                "ticker": ticker,
+                "data_kind": "filing_availability_metadata",
+                "source_ids": ["sec_edgar_submissions"],
+                "included": 0,
+                "exclusions": {"adapter_unavailable": 1},
+                "reason": str(sec_error),
+            }
+
     if is_crypto:
         return get_crypto_metrics(ticker, end_date, period, limit)
     
@@ -608,6 +741,7 @@ def get_crypto_metrics(
     
     return [empty_metrics]
 
+@point_in_time_filter("line_items", LineItem)
 def search_line_items(
     ticker: str,
     line_items: list[str],
@@ -952,6 +1086,7 @@ def search_crypto_line_items(
     
     return [result]
 
+@point_in_time_filter("insider_trades", InsiderTrade)
 def get_insider_trades(
     ticker: str,
     end_date: str,
@@ -1086,6 +1221,7 @@ def _classify_sentiment_text(text: str) -> str:
         return "negative"
     return "neutral"
 
+@point_in_time_filter("company_news", CompanyNews)
 def get_company_news(
     ticker: str,
     end_date: str,
@@ -1140,8 +1276,11 @@ def get_company_news(
                 author=item.get("publisher") or "2MD Search",
                 source="2MD Web",
                 date=end_date,
+                business_date=end_date,
                 url=url,
-                sentiment=sentiment
+                sentiment=sentiment,
+                source_id="2md_web_search",
+                point_in_time_status="unknown",
             )
             news_items.append(news_item)
             if len(news_items) >= limit:
@@ -1182,7 +1321,7 @@ def get_company_news(
                     publisher = news.get('publisher', publisher)
                     published_ts = news.get('providerPublishTime', 0)
 
-                news_date = datetime.fromtimestamp(published_ts) if published_ts else datetime.now()
+                news_date = datetime.fromtimestamp(published_ts, tz=timezone.utc) if published_ts else datetime.now(timezone.utc)
                 date_str = news_date.strftime('%Y-%m-%d')
                 
                 if (published_ts and (news_date < start_dt or news_date >= end_dt)) or link in seen_urls:
@@ -1196,8 +1335,12 @@ def get_company_news(
                     author=publisher,
                     source=publisher or "Yahoo Finance",
                     date=date_str,
+                    business_date=date_str,
+                    available_at=news_date.isoformat().replace("+00:00", "Z") if published_ts else None,
                     url=link,
-                    sentiment=sentiment
+                    sentiment=sentiment,
+                    source_id="yahoo_finance_news",
+                    point_in_time_status="verified" if published_ts else "unknown",
                 )
                 news_items.append(news_item)
                 if len(news_items) >= limit:
@@ -1270,8 +1413,12 @@ def get_crypto_news(
                             author=article.get("author", "Unknown"),
                             source=article.get("source", "CryptoCompare"),
                             date=published_date,
+                            business_date=published_date,
+                            available_at=datetime.fromtimestamp(article["published_on"], tz=timezone.utc).isoformat().replace("+00:00", "Z"),
                             url=article["url"],
-                            sentiment=sentiment
+                            sentiment=sentiment,
+                            source_id="cryptocompare_news",
+                            point_in_time_status="verified",
                         )
                         
                         news_list.append(news)
@@ -1291,6 +1438,18 @@ def get_market_cap(
     end_date: str,
 ) -> float | None:
     """Fetch market cap from Yahoo Finance."""
+    context = current_point_in_time_context()
+    if context and context.get("strict"):
+        context["coverage"][f"{ticker}:market_cap"] = {
+            "ticker": ticker,
+            "data_kind": "market_cap",
+            "cutoff": context["cutoff"].isoformat().replace("+00:00", "Z"),
+            "source_ids": ["yahoo_finance_current_quote"],
+            "included": 0,
+            "exclusions": {"unknown_availability": 1},
+            "reason": "provider does not expose historical point-in-time market cap",
+        }
+        return None
     try:
         # Format ticker for yfinance
         formatted_ticker = _format_ticker_for_yfinance(ticker)

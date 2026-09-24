@@ -45,6 +45,21 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 - 📈 **社群風向與散戶情緒**：WSB Agent 整合即時社群動能與選擇權軋空潛力評估。
 - 📦 **Docker 一鍵部署**：內建 Flask API 與 Swagger UI，支援 WebSocket 即時日誌廣播與 Discord Webhook 報告推送。
 
+### Point-in-Time 持倉分析與可續跑回測
+
+`POST /api/analysis` 可選擇傳入明確的 `portfolio` 快照（`as_of`、`cash`、幣別與多空持倉）；明確快照的現金優先於舊版 `initialCash`。設定 `pointInTime: true` 會依資料可用時間套用嚴格截止，未知發布時間資料會排除並回報覆蓋率。SEC filing metadata 使用 acceptance time 加 3 分鐘保守緩衝；此 metadata 不會把 Yahoo 財報值轉成 PIT 財報。跨幣別持倉需要可用的歷史 FX 報價。現有股票清冊只有當前名單，歷史結果會標示 survivorship bias；股息現金流目前不模擬。
+
+`POST /api/backtest/grid` 可批次執行同步日期網格，`runId` 相同且設定相同時可從 SQLite checkpoint 繼續；設定不同會拒絕重用。`GET /api/backtest/runs/<run_id>` 讀取已保存的 manifest/result。資料庫預設為 `instance/backtest_runs.sqlite3`，可用 `BACKTEST_RUN_DB` 指向持久磁碟路徑。容器部署請掛載該資料庫目錄以保留 checkpoint。回測使用共用 UTC cutoff、預設每日再平衡、0.10% 手續費與 0.05% 滑價；區域 benchmark 映射與來源覆蓋限制會隨結果保存。
+
+```bash
+curl -X POST http://localhost:6000/api/backtest/grid \
+  -H 'Content-Type: application/json' \
+  -d '{"runId":"example-2026-01","tickers":["AAPL","2330.TW"],"startDate":"2026-01-05","endDate":"2026-01-30","initialCash":100000}'
+curl http://localhost:6000/api/backtest/runs/example-2026-01
+```
+
+SEC filing metadata 查詢需要設定 `SEC_USER_AGENT`，值需包含應用程式識別與聯絡方式。
+
 ---
 
 網頁版介面 Web Page
@@ -122,6 +137,34 @@ docker run -d --name nice_jemison \
 # 方式 C：使用 Docker Compose 一鍵啟動 API + Watchtower 自動更新守護進程
 docker compose up -d
 ```
+
+### 使用 GHCR 預建映像
+
+GitHub Actions 會將 `latest` 與目前 `yfinance.version` 版本標籤發布至 GHCR。可用 `AI_HEDGE_FUND_IMAGE` 指定 Compose 使用的映像；未設定時仍會使用本機建置的 `ai-hedge-fund-api:latest`。
+
+```bash
+# 拉取目前 latest 並以預建映像啟動（不進行本機建置）
+AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose pull ai-hedge-fund-api
+AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose up -d --no-build
+
+# 固定使用 yfinance.version 中記錄的版本標籤（先讀取目前版本）
+YFINANCE_VERSION=$(cat yfinance.version)
+AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:$YFINANCE_VERSION docker compose pull ai-hedge-fund-api
+AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:$YFINANCE_VERSION docker compose up -d --no-build
+
+# 回到本機 Dockerfile 建置方式
+docker compose up -d --build
+```
+
+GHCR 套件設為公開時可直接拉取。若套件為私人，請使用具有 `read:packages` 權限的 GitHub token 登入後再執行上述命令：
+
+```bash
+export GITHUB_USERNAME="your_github_username_here"
+export GHCR_TOKEN="your_ghcr_read_package_token_here"
+printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_USERNAME" --password-stdin
+```
+
+Docker Hub `tbdavid2019/ai-hedge-fund-api` 僅作為可選鏡像；未設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN` 時，工作流仍會正常發布至 GHCR。
 
 ---
 
