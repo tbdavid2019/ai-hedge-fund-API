@@ -1,6 +1,6 @@
 ---
 name: ai-hedge-fund
-description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 15 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation, Druckenmiller) and multi-round round table debates with dynamic portfolio allocation.
+description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 16 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation, Druckenmiller, Jev Decision Model) and multi-round round table debates with dynamic portfolio allocation.
 ---
 
 # 🤖 AI Hedge Fund API - Agent Skill Guide
@@ -57,7 +57,7 @@ Execute deep investment analysis across selected AI investor personas with optio
 | Parameter | Type | Required | Default | Description |
 |:---|:---|:---:|:---|:---|
 | `tickers` | string / array | ✅ | - | Tickers or company names across US, HK, TW (e.g. `"TSLA,NVDA"`, `"2330"`, `"3293"`, `"700"`, `"9988"`, `"騰訊"`, `"蘋果"`, `"SPCX"`) |
-| `selectedAnalysts` | array | ❌ | `[]` (all 15) | Analyst registry keys; unknown keys or non-array values return HTTP 400 |
+| `selectedAnalysts` | array | ❌ | `[]` (all 16) | Analyst registry keys; unknown keys or non-array values return HTTP 400 |
 | `modelName` | string | ❌ | `openai/gpt-oss-20b` | Model identifier: `clef-flash`, `clef-flash-q4`, `openai/gpt-oss-20b`, `models/gemini-flash-latest`, `gpt-4o` |
 | `modelProvider` | string | ❌ | `Groq` | Model provider: `TypeSafe`, `Groq`, `Gemini`, `OpenAI` (`clef-flash` automatically maps to `TypeSafe`) |
 | `enableRoundTable` | boolean | ❌ | `false` | Enable multi-round debate committee after analyst signals |
@@ -162,7 +162,7 @@ Run an investment committee debate with pre-computed analyst signals.
 
 ---
 
-## 👥 15 Analyst Personas Reference Table
+## 👥 16 Analyst Personas Reference Table
 
 | Analyst Key | Display Name | Core Investment Philosophy |
 |:---|:---|:---|
@@ -181,6 +181,7 @@ Run an investment committee debate with pre-computed analyst signals.
 | `sentiment_analyst` | **Sentiment Analyst** | 2md global news sentiment scoring, SEC Form 4 insider trades |
 | `valuation_analyst` | **Valuation Analyst** | Discounted Cash Flow (DCF), EV/EBITDA, relative peer multiples |
 | `stanley_druckenmiller` | **Stanley Druckenmiller** | Macro & growth inflections, acceleration rate-of-change, asymmetric risk/reward |
+| `decision_model` | **Jev Decision Model** | JEV SystemOne fast structured evaluation, T+1~T+3 directional probability forecasting, PEAD drift |
 
 ---
 

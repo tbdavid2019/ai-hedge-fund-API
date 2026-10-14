@@ -15,6 +15,7 @@ from agents.valuation import valuation_agent
 from agents.warren_buffett import warren_buffett_agent
 from agents.wsb_agent import wsb_agent
 from agents.stanley_druckenmiller import stanley_druckenmiller_agent
+from agents.decision_model import decision_model_agent
 
 # Define analyst configuration - single source of truth
 ANALYST_CONFIG = {
@@ -92,6 +93,11 @@ ANALYST_CONFIG = {
         "display_name": "Stanley Druckenmiller",
         "agent_func": stanley_druckenmiller_agent,
         "order": 14,
+    },
+    "decision_model": {
+        "display_name": "Jev Decision Model",
+        "agent_func": decision_model_agent,
+        "order": 15,
     },
 }
 

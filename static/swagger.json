@@ -290,7 +290,7 @@
           },
           "selectedAnalysts": {
             "type": "array",
-            "description": "分析師 key 陣列，必須來自 analyst registry；未知 key 或非陣列值會在工作開始前回 HTTP 400。空陣列表示使用全部 15 位分析師。",
+            "description": "分析師 key 陣列，必須來自 analyst registry；未知 key 或非陣列值會在工作開始前回 HTTP 400。空陣列表示使用全部 16 位分析師。",
             "items": {
               "type": "string",
               "enum": [
@@ -308,7 +308,8 @@
                 "fundamentals_analyst",
                 "sentiment_analyst",
                 "valuation_analyst",
-                "stanley_druckenmiller"
+                "stanley_druckenmiller",
+                "decision_model"
               ]
             }
           },

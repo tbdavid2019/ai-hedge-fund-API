@@ -110,6 +110,11 @@ PERSONA_REGISTRY: Dict[str, Dict[str, str]] = {
         "style": "Aggressive, inflection-obsessed macro trader hunting for acceleration, rate-of-change, and asymmetric setups",
         "philosophy": "It's not whether you're right or wrong, but how much money you make when you're right and how much you lose when you're wrong. Go big when the inflection and price line up.",
     },
+    "decision_model": {
+        "name": "Jev Decision Model",
+        "style": "Algorithmic, statistical, probability-distribution driven without human bias, fast SystemOne inference",
+        "philosophy": "Probability distributions, quantitative momentum, and short-term directional vectors (T+1~T+3) dictate market truth.",
+    },
 }
 
 

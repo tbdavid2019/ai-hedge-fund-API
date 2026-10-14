@@ -144,6 +144,30 @@ class TestQuantModule(unittest.TestCase):
         self.assertIn(res["signal"], ["bullish", "bearish", "neutral"])
         self.assertIn("probabilities", res)
 
+    def test_decision_model_agent_resilience(self):
+        from src.agents.decision_model import decision_model_agent
+        dummy_state = {
+            "messages": [],
+            "data": {
+                "tickers": ["AAPL"],
+                "start_date": "2026-01-01",
+                "end_date": "2026-04-01",
+                "analyst_signals": {},
+            },
+            "metadata": {
+                "show_reasoning": False,
+                "model_name": "clef-flash",
+                "model_provider": "Clef",
+            }
+        }
+        res = decision_model_agent(dummy_state)
+        self.assertIn("data", res)
+        self.assertIn("analyst_signals", res["data"])
+        self.assertIn("decision_model", res["data"]["analyst_signals"])
+        sig = res["data"]["analyst_signals"]["decision_model"]["AAPL"]
+        self.assertIn(sig["signal"], ["bullish", "bearish", "neutral"])
+        self.assertIn("probabilities", sig)
+
 
 if __name__ == "__main__":
     unittest.main()

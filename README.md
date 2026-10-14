@@ -1,6 +1,6 @@
 ---
 name: ai-hedge-fund
-description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 15 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation, Druckenmiller) and multi-round round table debates with dynamic portfolio allocation.
+description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 16 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation, Druckenmiller, Jev Decision Model) and multi-round round table debates with dynamic portfolio allocation.
 ---
 
 # 🤖 AI Hedge Fund API (v2.0)
@@ -22,15 +22,15 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 
 ## 🇺🇸 English Documentation
 
-An institutional-grade, multi-agent financial quantitative research and investment committee system. Built on **LangGraph** and **Python 3.13**, it orchestrates 15 specialized investment personas, simulates a multi-round round table committee debate, leverages point-in-time quantitative risk controls, and delivers risk-adjusted portfolio allocation decisions.
+An institutional-grade, multi-agent financial quantitative research and investment committee system. Built on **LangGraph** and **Python 3.13**, it orchestrates 16 specialized investment personas, simulates a multi-round round table committee debate, leverages point-in-time quantitative risk controls, and delivers risk-adjusted portfolio allocation decisions.
 
 ### 🧭 Documentation Map
 
 | Document | Purpose | Target Audience |
 |:---|:---|:---|
-| 📄 [**skill.md**](./skill.md) | **API Calling Specification & Endpoint Schema** (minimal JSON payloads, 15 analyst keys, TypeSafe/Groq models) | 🤖 AI Agents & LLMs |
+| 📄 [**skill.md**](./skill.md) | **API Calling Specification & Endpoint Schema** (minimal JSON payloads, 16 analyst keys, TypeSafe/Groq models) | 🤖 AI Agents & LLMs |
 | 🛠️ [**AGENTS.md**](./AGENTS.md) | **Codebase Architecture & AI Developer Guide** (LangGraph state machine, module responsibilities, failover, agent creation) | 🤖 AI Coding Agents |
-| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **15 Legendary Analyst Quantitative Models** (Investment philosophies, financial formulas, debate mechanics) | 📈 Quants & Researchers |
+| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **16 Investment Analyst & Quantitative Models** (Investment philosophies, financial formulas, debate mechanics) | 📈 Quants & Researchers |
 | 📝 [**CHANGELOG.md**](./CHANGELOG.md) | **Version History & Release Notes** (v2.0 architecture, 2md search, TypeSafe integration) | 🛠️ Developers |
 | 📑 [**Swagger UI**](https://hedgeapi.afpicapital.com/docs) | **Interactive Web Testing Platform** | 🌐 Web Browsers |
 
@@ -61,6 +61,10 @@ An institutional-grade, multi-agent financial quantitative research and investme
 7. 🏟️ **Headline Arena Agent Forecasting Arena Integration (`scripts/sync_headline_arena.py`)**:
    - Seamlessly synchronizes macro commodity & index forecasts with [Headline Arena](https://headlinearena.com) ([Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4)).
    - Automatically maps macro futures contracts (Gold `GC`, S&P 500 `ES`, Treasuries `ZN`, Crude `CL`, Bitcoin `BTC`) to liquid underlying ETFs (`GLD`, `SPY`, `TLT`, `USO`, `BTC-USD`), benchmarks committee vs persona convictions, and tracks public verifiable Brier accuracy scores.
+8. ⚡ **Independent Algorithmic Decision Model Agent (`decision_model`)**:
+   - Packaged as an independent quantitative analyst agent powered by TypeSafe JEV / Clef-Flash SystemOne.
+   - Generates calibrated $T+1 \sim T+3$ directional probability distributions (`bullish`, `neutral`, `bearish`) and incorporates PEAD earnings drift.
+   - Built with high-availability fail-safe resilience: if remote inference services are unreachable, it automatically gracefully falls back to quantitative statistical momentum without blocking the hedge fund pipeline.
 
 ---
 
@@ -200,6 +204,10 @@ AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose 
 7. 🏟️ **Headline Arena 公開宏觀預測競技場無縫對接 (`scripts/sync_headline_arena.py`)**：
    - 完美相容 [Headline Arena](https://headlinearena.com) AI Agent 預測協議（[Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4)）。
    - 自動將宏觀期貨題目（黃金 GC、標普 ES、美債 ZN、原油 CL、比特幣 BTC）映射至對應資產，支持委員會共識或卓肯米勒單一大師出戰，公開累積 Brier 評分與預測命中記分卡。
+8. ⚡ **獨立量化演算法決策模型 (`decision_model`)**：
+   - 將 TypeSafe JEV / Clef-Flash SystemOne 快速推理與短線方向機率預測封裝為獨立分析師 Agent。
+   - 直接輸出 $T+1 \sim T+3$ 方向多分類機率向量（看漲、平盤、看跌）與 PEAD 盈餘驚喜漂移信號。
+   - 具備強韌高可用降級保證（Fail-Safe）：若外部決策服務全部離線，自動無縫降級為純統計動能基線，絕不中斷避險基金整體流程。
 
 ---
 

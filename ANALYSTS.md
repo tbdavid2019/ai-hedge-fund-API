@@ -1,6 +1,6 @@
 # 📊 投資分析師體系與量化模型指南 (ANALYSTS.md)
 
-本文件詳細記載系統內建 **14 位專業 AI 投資分析師** 之投資哲學、量化分析維度、數據來源與決策門檻，供金融研究與策略調優參考。
+本文件詳細記載系統內建 **16 位專業 AI 投資分析師** 之投資哲學、量化分析維度、數據來源與決策門檻，供金融研究與策略調優參考。
 
 ---
 
@@ -23,6 +23,7 @@
 | `sentiment_analyst` | **Sentiment Analyst (情緒分析師)** | 市場心理、新聞與內部人訊號 | 2md 即時新聞情緒評分、SEC 內部人申報買賣超 |
 | `valuation_analyst` | **Valuation Analyst (估值分析師)** | 現金流折現模型 (DCF)、同業比較 | DCF 內在價值、EV/EBITDA、歷史乘數區間 |
 | `stanley_druckenmiller` | **Stanley Druckenmiller (史丹利·德魯肯米勒)** | 宏觀拐點、非對稱勝率 | 基本面加速度 (二階導)、營收/利潤率轉折、預期落差、下行保護 |
+| `decision_model` | **Jev Decision Model (Jev 量化決策模型)** | JEV 演算法決策、機率分佈、極速推理 | T+1~T+3 方向機率向量、動能漂移 (PEAD)、統計安全降級 |
 
 ---
 
@@ -174,4 +175,14 @@
   * **預期與定價差距（What's Priced In）**：高本益比若伴隨加速成長仍值得買入，低本益比若伴隨惡化則是價值陷阱；
   * **非對稱勝率（Asymmetric Setup）**：唯有勝率與盈虧比非對稱時給出高度看多/看空，普通機會一律中性觀望；
   * **帳戶保護（Downside Protection）**：基本面惡化伴隨高槓桿（Debt/Equity 過高）一律 pass 或 short，嚴防帳戶毀滅性回撤。
+
+---
+
+### 16. ⚡ Jev Decision Model (Jev 量化決策模型)
+* **Agent 檔案**：[`src/agents/decision_model.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/agents/decision_model.py)
+* **核心哲學**：*"機率分佈、客觀量化動能與短線方向向量決定市場本質，剔除人類情緒與認知偏差。"*
+* **分析模型**：
+  * **超高速結構化評估**：採用 TypeSafe JEV / Clef-Flash SystemOne 快速推理 (<200ms)，直接輸出 $T+1 \sim T+3$ 方向（看漲、平盤、看跌）機率矩陣。
+  * **PEAD 盈餘驚喜漂移量化**：依據財報 EPS Beat/Miss 程度與發布天數計算動能漂移信念度。
+  * **強韌高可用降級保證（Fail-Safe Resilience）**：即使外部 Jev / LLM 網路斷線或無響應，模型內部立即自動降級為純統計動能基線（Statistical Momentum Baseline），絕不中斷整個避險基金流水線。
 

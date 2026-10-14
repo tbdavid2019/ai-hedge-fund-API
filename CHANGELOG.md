@@ -6,6 +6,18 @@
 
 ## 🚀 未發布
 
+### ⚡ [Decision Model] 獨立量化演算法決策模型 Agent 與強韌高可用降級保證 (`src/agents/decision_model.py`)
+- **獨立封裝量化決策模型 (`decision_model`)**：
+  - 將 TypeSafe JEV / Clef-Flash SystemOne 快速推理、短線 $T+1 \sim T+3$ 方向多分類機率向量（看漲、平盤、看跌）與 PEAD 盈餘漂移信號正式封裝為第 16 位獨立分析師 Agent（`decision_model`）。
+  - 使用者與前端（StockBot）可在 API、圓桌會議與分析圖表中直接勾選、檢視獨立的 JEV 決策模型訊號與信心矩陣。
+  - 註冊至工作流單一真實來源 [`src/utils/analysts.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/utils/analysts.py) 與多輪圓桌辯論引擎 [`src/round_table/engine.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/round_table/engine.py)。
+- **強韌高可用降級保證（High-Availability Fail-Safe Resilience）**：
+  - 嚴格遵守「決策模型全部失敗時，底層必須繼續運作」之架構原則。
+  - 當外部 JEV / LLM 網路斷線、超時或數據缺失時，模型內部首先自動降級為純統計動能基線（Statistical Momentum Baseline）；若遭遇不可預期之極端錯誤，自動輸出中性安全信號，絕不中斷整個避險基金流水線、風控經理與投資組合配置。
+- **全方位測試與文檔更新**：
+  - 在 [`tests/test_quant.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/tests/test_quant.py) 中新增 `test_decision_model_agent_resilience` 單元測試。
+  - 全面更新 [`skill.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/skill.md)、[`static/swagger.json`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/static/swagger.json)、[`ANALYSTS.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/ANALYSTS.md) 與 [`README.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/README.md) 為 16 位分析師體系。
+
 ### 🏟️ [Headline Arena] 宏觀期貨預測競技場無縫整合與自動同步適配器 (`scripts/sync_headline_arena.py`)
 - **自主對接 Headline Arena 預測競技場 ([Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4))**：
   - 響應 Headline Arena 創辦人 Kopei 倡議的「agent-first 對 agent-first」與 `skill.md` 標準規範，將 15 位傳奇大師委員會與宏觀資產決策全面接軌至公開 AI Agent 預測競技場。
