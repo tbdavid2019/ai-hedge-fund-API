@@ -100,28 +100,26 @@ def sanitize_json_output(obj):
 
 
 def infer_model_provider(model_name: str, specified_provider: str = None) -> str:
-    """自動推斷 LLM 模型供應商（後端完全自主管理，前端無需傳遞）"""
-    if specified_provider and specified_provider.lower() not in ["auto", "openai-compatible", ""]:
-        return specified_provider
-    
-    if not model_name or str(model_name).lower() in ["auto", "deepseek-v4-flash", "default", "none", ""]:
-        return os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
-    
-    name = model_name.lower()
+    """自動推斷 LLM 模型供應商（若模型名稱具備明確特徵，優先依模型名稱推斷）"""
+    name = str(model_name or "").lower()
     if "clef" in name:
         return "Clef"
     elif "typesafe" in name or "jev" in name:
         return "TypeSafe"
-    elif "gpt-oss" in name or "groq" in name:
-        return "Groq"
     elif "claude" in name:
         return "Anthropic"
     elif "gemini" in name:
         return "Gemini"
     elif "deepseek" in name:
         return "DeepSeek"
+    elif "gpt-oss" in name or "groq" in name:
+        return "Groq"
     elif "gpt" in name or "o1" in name or "o3" in name:
         return "OpenAI"
+
+    if specified_provider and specified_provider.lower() not in ["auto", "openai-compatible", ""]:
+        return specified_provider
+    
     return os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
 
 

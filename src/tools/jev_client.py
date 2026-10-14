@@ -271,6 +271,15 @@ class ChatSystemOne:
                 self.schema_model = schema_model
 
             def invoke(self, prompt: Any):
+                fields = self.schema_model.model_fields if hasattr(self.schema_model, "model_fields") else {}
+                # If schema requires complex generative fields (decisions, debate transcripts),
+                # SystemOne is an evaluation classifier and cannot generate multi-asset JSON.
+                # Seamlessly delegate to the primary/fallback generative LLM.
+                if "decisions" in fields or "discussion_summary" in fields or "signal" not in fields:
+                    from llm.models import get_fallback_model
+                    fallback = get_fallback_model()
+                    return fallback.with_structured_output(self.schema_model, method="json_mode").invoke(prompt)
+
                 system_text, user_text = extract_system_and_user_prompts(prompt)
                 res = call_systemone_with_failover(
                     system_prompt=system_text,
@@ -278,7 +287,6 @@ class ChatSystemOne:
                     model_name=self.parent_client.model_name,
                     timeout=self.parent_client.timeout
                 )
-                fields = self.schema_model.model_fields if hasattr(self.schema_model, "model_fields") else {}
                 data = {
                     "signal": res["signal"],
                     "confidence": res["confidence"],

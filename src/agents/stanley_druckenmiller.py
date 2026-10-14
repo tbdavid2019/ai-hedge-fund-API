@@ -75,10 +75,21 @@ def stanley_druckenmiller_agent(state: AgentState):
         # 2. Analyze leverage and downside risk (prevent account blowups)
         risk_analysis = analyze_leverage_risk(financial_line_items)
 
+        serializable_metrics = [
+            m.model_dump() if hasattr(m, "model_dump") else (m.dict() if hasattr(m, "dict") else str(m))
+            for m in (metrics or [])
+        ]
+        serializable_line_items = [
+            item.model_dump() if hasattr(item, "model_dump") else (item.dict() if hasattr(item, "dict") else str(item))
+            for item in (financial_line_items or [])
+        ]
+
         analysis_data[ticker] = {
+            "market_cap": market_cap,
             "inflection_analysis": inflection_analysis,
             "risk_analysis": risk_analysis,
-            "market_cap": market_cap,
+            "recent_metrics": serializable_metrics[:4],
+            "financial_line_items": serializable_line_items[:4],
         }
 
         progress.update_status("stanley_druckenmiller_agent", ticker, "Generating Druckenmiller conviction")
@@ -125,9 +136,11 @@ def analyze_inflections(metrics: list, line_items: list) -> dict[str, any]:
             if rev_growth_latest > rev_growth_prev:
                 acceleration_score += 2
                 details.append(f"Revenue growth accelerating from {rev_growth_prev:.1%} to {rev_growth_latest:.1%}.")
-            else:
+            elif rev_growth_latest < rev_growth_prev:
                 acceleration_score -= 2
                 details.append(f"Revenue growth decelerating from {rev_growth_prev:.1%} to {rev_growth_latest:.1%}.")
+            else:
+                details.append(f"Revenue growth flat at {rev_growth_latest:.1%}.")
 
         op_margin_latest = getattr(metrics[0], "operating_margin", None)
         op_margin_prev = getattr(metrics[1], "operating_margin", None)
@@ -135,9 +148,11 @@ def analyze_inflections(metrics: list, line_items: list) -> dict[str, any]:
             if op_margin_latest > op_margin_prev:
                 acceleration_score += 1
                 details.append(f"Operating margin expanding from {op_margin_prev:.1%} to {op_margin_latest:.1%}.")
-            else:
+            elif op_margin_latest < op_margin_prev:
                 acceleration_score -= 1
                 details.append(f"Operating margin contracting from {op_margin_prev:.1%} to {op_margin_latest:.1%}.")
+            else:
+                details.append(f"Operating margin flat at {op_margin_latest:.1%}.")
 
     return {
         "acceleration_score": acceleration_score,

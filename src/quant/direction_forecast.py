@@ -36,6 +36,7 @@ def forecast_price_direction(
             "ticker": ticker,
             "signal": "neutral",
             "confidence": 50.0,
+            "probabilities": {"bullish": 0.33, "neutral": 0.34, "bearish": 0.33},
             "forecasts": [],
             "reasoning": "Insufficient price history for short-term directional forecast."
         }
@@ -47,6 +48,7 @@ def forecast_price_direction(
             "ticker": ticker,
             "signal": "neutral",
             "confidence": 50.0,
+            "probabilities": {"bullish": 0.33, "neutral": 0.34, "bearish": 0.33},
             "forecasts": [],
             "reasoning": "Missing close prices."
         }

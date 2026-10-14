@@ -80,9 +80,9 @@ def calculate_pead_signal(
             "reasoning": f"Latest earnings announcement was {days_elapsed} days ago, outside the {signal_window_days}-day PEAD drift window."
         }
 
-    # Evaluate earnings surprise
-    eps_actual = latest_report.get("eps_actual") or latest_report.get("actual")
-    eps_estimate = latest_report.get("eps_estimate") or latest_report.get("estimate")
+    # Evaluate earnings surprise (preserve exact zero values)
+    eps_actual = latest_report.get("eps_actual") if latest_report.get("eps_actual") is not None else latest_report.get("actual")
+    eps_estimate = latest_report.get("eps_estimate") if latest_report.get("eps_estimate") is not None else latest_report.get("estimate")
     surprise_pct = latest_report.get("surprise_pct")
 
     if surprise_pct is None and eps_actual is not None and eps_estimate is not None:
