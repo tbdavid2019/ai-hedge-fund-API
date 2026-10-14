@@ -105,6 +105,11 @@ PERSONA_REGISTRY: Dict[str, Dict[str, str]] = {
         "style": "Rigorous financial modeler, calculating DCF intrinsic value, EV/EBITDA multiples, and peer comparisons",
         "philosophy": "Price is what you pay, value is what you get. Never overpay for unproven growth.",
     },
+    "stanley_druckenmiller": {
+        "name": "Stanley Druckenmiller",
+        "style": "Aggressive, inflection-obsessed macro trader hunting for acceleration, rate-of-change, and asymmetric setups",
+        "philosophy": "It's not whether you're right or wrong, but how much money you make when you're right and how much you lose when you're wrong. Go big when the inflection and price line up.",
+    },
 }
 
 

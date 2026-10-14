@@ -15,6 +15,8 @@ class ModelProvider(str, Enum):
     GEMINI = "Gemini"
     DEEPSEEK = "DeepSeek"
     OPENAI_COMPATIBLE = "OpenAI-Compatible"
+    CLEF = "Clef"
+    TYPESAFE = "TypeSafe"
 
 
 class LLMModel(BaseModel):
@@ -128,6 +130,18 @@ AVAILABLE_MODELS = [
         model_name="deepseek-reasoner",
         provider=ModelProvider.DEEPSEEK
     ),
+
+    # TypeSafe & Clef SystemOne Fast Structured Decision Models (<200ms)
+    LLMModel(
+        display_name="[clef] Clef-Flash (Primary SystemOne, <200ms)",
+        model_name="clef-flash",
+        provider=ModelProvider.CLEF
+    ),
+    LLMModel(
+        display_name="[typesafe] TypeSafe Jev (Official SystemOne)",
+        model_name="typesafe-ai/jev",
+        provider=ModelProvider.TYPESAFE
+    ),
 ]
 
 # Create LLM_ORDER in the format expected by the UI
@@ -200,6 +214,10 @@ def get_model(model_name: str = None, model_provider: ModelProvider = None) -> A
             base_url="https://api.deepseek.com/v1",
             model=model_name
         )
+
+    elif model_provider in (ModelProvider.CLEF, ModelProvider.TYPESAFE) or "clef" in str(model_name).lower() or "jev" in str(model_name).lower():
+        from tools.jev_client import ChatSystemOne
+        return ChatSystemOne(model_name=model_name or "clef-flash")
 
     elif model_provider == ModelProvider.OPENAI_COMPATIBLE:
         api_key = os.getenv("PRIMARY_API_KEY") or os.getenv("CUSTOM_API_KEY") or os.getenv("GROQ_API_KEY")

@@ -22,10 +22,11 @@
 | `fundamentals_analyst` | **Fundamentals Analyst (基本面分析師)** | 財務三表深度審查 | 營收成長、毛利率、自由現金流、利息保障倍數 |
 | `sentiment_analyst` | **Sentiment Analyst (情緒分析師)** | 市場心理、新聞與內部人訊號 | 2md 即時新聞情緒評分、SEC 內部人申報買賣超 |
 | `valuation_analyst` | **Valuation Analyst (估值分析師)** | 現金流折現模型 (DCF)、同業比較 | DCF 內在價值、EV/EBITDA、歷史乘數區間 |
+| `stanley_druckenmiller` | **Stanley Druckenmiller (史丹利·德魯肯米勒)** | 宏觀拐點、非對稱勝率 | 基本面加速度 (二階導)、營收/利潤率轉折、預期落差、下行保護 |
 
 ---
 
-## 🌟 14 位投資分析師詳細說明
+## 🌟 15 位投資分析師詳細說明
 
 ### 1. 👴 Warren Buffett (華倫·巴菲特)
 * **Agent 檔案**：[src/agents/warren_buffett.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/warren_buffett.py)
@@ -162,3 +163,15 @@
   * 多階段現金流量折現模型 (Discounted Cash Flow, DCF)。
   * 相對估值倍數：企業價值乘數 (EV/EBITDA)、本益比 (P/E)、市銷率 (P/S)。
   * 歷史估值區間分位數與同業可比公司對比。
+
+---
+
+### 15. 🦅 Stanley Druckenmiller (史丹利·德魯肯米勒)
+* **Agent 檔案**：[src/agents/stanley_druckenmiller.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/stanley_druckenmiller.py)
+* **經典語錄**：*"重要的不是你對或錯，而是當你對的時候賺了多少，以及當你錯的時候賠了多少。只有當拐點與價格非對稱匹配時才重注揮棒。"*
+* **分析模型**：
+  * **基本面拐點（Inflection & Second Derivative）**：捕捉營收與營業利益率的加速度（Acceleration）而非靜態水準；
+  * **預期與定價差距（What's Priced In）**：高本益比若伴隨加速成長仍值得買入，低本益比若伴隨惡化則是價值陷阱；
+  * **非對稱勝率（Asymmetric Setup）**：唯有勝率與盈虧比非對稱時給出高度看多/看空，普通機會一律中性觀望；
+  * **帳戶保護（Downside Protection）**：基本面惡化伴隨高槓桿（Debt/Equity 過高）一律 pass 或 short，嚴防帳戶毀滅性回撤。
+

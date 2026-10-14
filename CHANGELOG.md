@@ -6,6 +6,35 @@
 
 ## 🚀 未發布
 
+### 🦅 [P0] 新增第 15 位投資大師：Stanley Druckenmiller (史丹利·德魯肯米勒)
+- **分析師 Agent ([`src/agents/stanley_druckenmiller.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/agents/stanley_druckenmiller.py))**：
+  - 專注於基本面轉折點（Inflections）、營收與營業利益率加速度（二階導 Rate-of-Change）、市場定價預期差距與非對稱盈虧比（Asymmetry）。
+  - 嚴格帳戶下行保護（Downside Protection），偵測高負債槓桿與基本面惡化組合，防範致命回撤。
+  - 註冊至工作流單一真實來源 [`src/utils/analysts.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/utils/analysts.py) 與多輪圓桌辯論引擎 [`src/round_table/engine.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/round_table/engine.py)。
+  - 同步更新系統文件 [`ANALYSTS.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/ANALYSTS.md)、[`skill.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/skill.md) 與 `static/skill.md`。
+
+### ⚡ [P1] 接入 TypeSafe JEV & Clef-Flash SystemOne 三級容災結構化決策引擎
+- **三級高可用容災架構 ([`src/tools/jev_client.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/tools/jev_client.py))**：
+  - **Tier-1 Primary**：自建 Clef-Flash (`https://clef.create360.ai/v1/systemone`)，極速 (<200ms)、免外部 Token 費用。
+  - **Tier-2 Fallback**：自建備援節點 Clef-Flash-Q4 (`https://clef.aiurl.tw/v1/systemone`)，自動故障轉移。
+  - **Tier-3 Fallback**：TypeSafe 官方 Jev 服務 (`https://api.typesafe.ai/v1/systemone`)，需帶 `TYPESAFE_API_KEY`。
+- **結構化決策與合約轉接 ([`src/tools/jev_client.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/tools/jev_client.py))**：
+  - 將市場數據與分析師 System Prompt 建構為標準 SystemOne 題目（方向選擇題、多空強度評分題）。
+  - 自動解析並正規化為標準投資決策（`signal`、`confidence`、中英雙語 `reasoning`）與多分類機率分佈（`probabilities: {"bullish": ..., "bearish": ..., "neutral": ...}`）。
+  - 封裝 `ChatSystemOne` 相容 LangChain Runnable 與 `.with_structured_output` 協議。
+- **模型註冊與 API 推斷更新**：
+  - 擴充 [`src/llm/models.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/llm/models.py) 新增 `ModelProvider.CLEF` 與 `ModelProvider.TYPESAFE`，並註冊 `clef-flash` 及 `typesafe-ai/jev` 模型。
+  - 升級 [`webui2.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/webui2.py) 之 `infer_model_provider`，自動辨識 `clef` 與 `typesafe`/`jev`。
+  - 新增完整單元測試 [`tests/test_jev_client.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/tests/test_jev_client.py)。
+
+### 📈 [P2] T+1 ~ T+3 短期方向機率預測器 (`src/quant/direction_forecast.py`)
+- 整合 `sosopop/jev_stock` 之短線量化狀態構建思維，結合個股量價動能與基準相對強弱。
+- 透過 SystemOne 輸出 $T+1$ 至 $T+3$ 每日多分類機率分佈（`up` > +0.3%、`flat`、`down` < -0.3%）與置信度，並提供純量化統計 Fallback。
+
+### 🎯 [P3] PEAD 盈餘驚喜與公佈後動能漂移模型 (`src/quant/pead.py`)
+- 系統化捕捉財報發布後盈餘驚喜（EPS Beat / Miss）的股價動能漂移信號。
+- 嚴格 Point-in-Time 檢驗（排除發布日後的未來資訊）與時間線性衰減加權，導出客觀數值信念度（Conviction `[-1.0, 1.0]`）。
+
 ### 🚀 程式碼 Push 自動建置、遠端部署與 API 驗證
 - `main` 上的程式碼變更會觸發 GHCR 映像建置，並透過專用 GitHub Actions SSH key 在 `dns.glsoft.ai` 拉取程式碼、遠端建置與重啟 API。
 - 部署流程會檢查 `/api/health`，並以無效回測輸入驗證 `/api/backtest/grid` 路由。

@@ -160,7 +160,7 @@ Run an investment committee debate with pre-computed analyst signals.
 
 ---
 
-## 👥 14 Analyst Personas Reference Table
+## 👥 15 Analyst Personas Reference Table
 
 | Analyst Key | Display Name | Core Investment Philosophy |
 |:---|:---|:---|
@@ -178,6 +178,7 @@ Run an investment committee debate with pre-computed analyst signals.
 | `fundamentals_analyst` | **Fundamentals Analyst** | Financial statements audit, revenue growth, gross & net margins |
 | `sentiment_analyst` | **Sentiment Analyst** | 2md global news sentiment scoring, SEC Form 4 insider trades |
 | `valuation_analyst` | **Valuation Analyst** | Discounted Cash Flow (DCF), EV/EBITDA, relative peer multiples |
+| `stanley_druckenmiller` | **Stanley Druckenmiller** | Macro & growth inflections, acceleration rate-of-change, asymmetric risk/reward |
 
 ---
 

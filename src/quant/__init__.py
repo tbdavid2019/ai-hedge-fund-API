@@ -12,6 +12,8 @@ from src.quant.technicals import (
     calculate_amihud_illiquidity,
     calculate_atr_dynamic_stops,
 )
+from src.quant.direction_forecast import forecast_price_direction
+from src.quant.pead import calculate_pead_signal
 
 __all__ = [
     "calculate_var_cvar",
@@ -22,4 +24,6 @@ __all__ = [
     "calculate_piotroski_f_score",
     "calculate_amihud_illiquidity",
     "calculate_atr_dynamic_stops",
+    "forecast_price_direction",
+    "calculate_pead_signal",
 ]

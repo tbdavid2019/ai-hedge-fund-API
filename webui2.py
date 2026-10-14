@@ -108,7 +108,11 @@ def infer_model_provider(model_name: str, specified_provider: str = None) -> str
         return os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
     
     name = model_name.lower()
-    if "gpt-oss" in name or "groq" in name:
+    if "clef" in name:
+        return "Clef"
+    elif "typesafe" in name or "jev" in name:
+        return "TypeSafe"
+    elif "gpt-oss" in name or "groq" in name:
         return "Groq"
     elif "claude" in name:
         return "Anthropic"

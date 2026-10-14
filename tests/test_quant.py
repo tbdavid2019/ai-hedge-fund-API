@@ -116,6 +116,34 @@ class TestQuantModule(unittest.TestCase):
         self.assertGreater(atr["atr_14"], 0)
         self.assertLess(atr["trailing_stop_long"], df["close"].iloc[-1])
 
+    def test_pead_signal_calculation(self):
+        from src.quant.pead import calculate_pead_signal
+        earnings_history = [
+            {
+                "date": "2026-09-15",
+                "eps_actual": 1.50,
+                "eps_estimate": 1.20,
+                "surprise_direction": "BEAT"
+            },
+            {
+                "date": "2026-06-15",
+                "eps_actual": 1.10,
+                "eps_estimate": 1.15,
+                "surprise_direction": "MISS"
+            }
+        ]
+        res = calculate_pead_signal("AAPL", earnings_history, as_of_date="2026-09-20")
+        self.assertEqual(res["signal"], "bullish")
+        self.assertGreater(res["conviction"], 0)
+        self.assertIn("EPS BEAT", res["reasoning"])
+
+    def test_direction_forecast_fallback(self):
+        from src.quant.direction_forecast import forecast_price_direction
+        prices = [{"close": 100.0 + i * 2.0} for i in range(10)]
+        res = forecast_price_direction("TSLA", prices, flat_threshold=0.003)
+        self.assertIn(res["signal"], ["bullish", "bearish", "neutral"])
+        self.assertIn("probabilities", res)
+
 
 if __name__ == "__main__":
     unittest.main()
