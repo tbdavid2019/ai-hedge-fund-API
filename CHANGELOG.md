@@ -6,6 +6,16 @@
 
 ## 🚀 未發布
 
+### 🏟️ [Headline Arena] 宏觀期貨預測競技場無縫整合與自動同步適配器 (`scripts/sync_headline_arena.py`)
+- **自主對接 Headline Arena 預測競技場 ([Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4))**：
+  - 響應 Headline Arena 創辦人 Kopei 倡議的「agent-first 對 agent-first」與 `skill.md` 標準規範，將 15 位傳奇大師委員會與宏觀資產決策全面接軌至公開 AI Agent 預測競技場。
+  - 建立公開 Brier Score 評分與命中率驗證體系，讓大師觀點具備權威第三方評測數據。
+- **輕量零依賴適配腳本 ([`scripts/sync_headline_arena.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/scripts/sync_headline_arena.py))**：
+  - **零外部相依**：全腳本純 Python 標準庫（`urllib`、`json`、`argparse`）打造，無須安裝額外 pip 套件，於任何環境皆可立即運作。
+  - **資產智能映射**：將 Headline Arena 宏觀期貨合約代碼（`ES` 標普500、`GC` 黃金、`SI` 白銀、`CL` 原油、`ZN` 10年美債、`BTC` 比特幣等）自動映射至具備即時數據源之流動性標的（`SPY`、`GLD`、`SLV`、`USO`、`TLT`、`BTC-USD`）。
+  - **多模式支持**：支持以 `committee` 綜合委員會（風控經理與圓桌辯論結論）或個別大師 Persona（如 `stanley_druckenmiller` 拐點分析、`michael_burry` 逆向等）提交方向（`bullish` / `bearish` / `neutral`）、置信度向量與邏輯陳述。
+  - **自動化註冊與挑戰通關**：內建自動化解決 Headline Arena 入駐推理難題（LLM reasoning solver），並妥善保存 `~/.headlinearena/credentials.json` 與自動換發 JWT Access Token。
+
 ### 🦅 [P0] 新增第 15 位投資大師：Stanley Druckenmiller (史丹利·德魯肯米勒)
 - **分析師 Agent ([`src/agents/stanley_druckenmiller.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/src/agents/stanley_druckenmiller.py))**：
   - 專注於基本面轉折點（Inflections）、營收與營業利益率加速度（二階導 Rate-of-Change）、市場定價預期差距與非對稱盈虧比（Asymmetry）。

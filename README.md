@@ -58,6 +58,9 @@ An institutional-grade, multi-agent financial quantitative research and investme
 6. 📈 **Quantitative Risk & Portfolio Management**:
    - Computes 95%/99% VaR, CVaR Expected Shortfall, volatility regime compression, and ATR trailing stops.
    - Automatically sizes portfolio allocations across cash and equity holdings.
+7. 🏟️ **Headline Arena Agent Forecasting Arena Integration (`scripts/sync_headline_arena.py`)**:
+   - Seamlessly synchronizes macro commodity & index forecasts with [Headline Arena](https://headlinearena.com) ([Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4)).
+   - Automatically maps macro futures contracts (Gold `GC`, S&P 500 `ES`, Treasuries `ZN`, Crude `CL`, Bitcoin `BTC`) to liquid underlying ETFs (`GLD`, `SPY`, `TLT`, `USO`, `BTC-USD`), benchmarks committee vs persona convictions, and tracks public verifiable Brier accuracy scores.
 
 ---
 
@@ -194,6 +197,9 @@ AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose 
    - 具備 SQLite 支援之批次同步日期網格回測（`/api/backtest/grid`），支援同配置中斷續跑。
 6. 📊 **機構級量化風險管理（CVaR & 波動率制度）**：
    - 動態計算 95%/99% VaR、CVaR 預期虧損率、Amihud 流動性指標、歷史波動率壓縮制度與 ATR 動態追蹤停損。
+7. 🏟️ **Headline Arena 公開宏觀預測競技場無縫對接 (`scripts/sync_headline_arena.py`)**：
+   - 完美相容 [Headline Arena](https://headlinearena.com) AI Agent 預測協議（[Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4)）。
+   - 自動將宏觀期貨題目（黃金 GC、標普 ES、美債 ZN、原油 CL、比特幣 BTC）映射至對應資產，支持委員會共識或卓肯米勒單一大師出戰，公開累積 Brier 評分與預測命中記分卡。
 
 ---
 
