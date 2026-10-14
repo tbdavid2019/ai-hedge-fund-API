@@ -250,7 +250,7 @@ def broadcast_log(message, level="info"):
 @app.route('/')
 @app.route('/skill.md')
 def serve_skill_md():
-    """提供 Skill MD 文件供 AI Agent / LLM 參考與調用指南"""
+    """提供 Skill MD 文件供 AI Agent / LLM 參考與調用指南，自動依據請求來源動態識別 Base URL"""
     skill_path = os.path.join(os.path.dirname(__file__), "static", "skill.md")
     if not os.path.exists(skill_path):
         skill_path = os.path.join(os.path.dirname(__file__), "skill.md")
@@ -258,6 +258,34 @@ def serve_skill_md():
     if os.path.exists(skill_path):
         with open(skill_path, "r", encoding="utf-8") as f:
             content = f.read()
+
+        # 自動偵測當前請求的實際對外 Base URL (相容 Nginx 反向代理與本地直接請求)
+        scheme = request.headers.get('X-Forwarded-Proto', request.scheme or 'http')
+        host = request.headers.get('X-Forwarded-Host', request.host)
+        if host:
+            detected_base_url = f"{scheme}://{host}".rstrip('/')
+            import re
+            content = re.sub(
+                r'-\s+\*\*Server Base URL\*\*:\s+`[^`]+`',
+                f'- **Server Base URL**: `{detected_base_url}`',
+                content
+            )
+            content = re.sub(
+                r'-\s+\*\*API Documentation\*\*:\s+`[^`]+/docs`',
+                f'- **API Documentation**: `{detected_base_url}/docs`',
+                content
+            )
+            content = re.sub(
+                r'-\s+\*\*Health Check\*\*:\s+`[^`]+/api/health`',
+                f'- **Health Check**: `{detected_base_url}/api/health`',
+                content
+            )
+            content = re.sub(
+                r'-\s+\*\*Swagger JSON\*\*:\s+`[^`]+/static/swagger.json`',
+                f'- **Swagger JSON**: `{detected_base_url}/static/swagger.json`',
+                content
+            )
+
         return Response(content, mimetype="text/markdown; charset=utf-8")
     return Response("# AI Hedge Fund API\n\nPlease visit /docs for Swagger UI documentation.", mimetype="text/plain; charset=utf-8")
 

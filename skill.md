@@ -7,7 +7,7 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 
 This document is designed for AI Agents and LLMs to understand and interact with the **AI Hedge Fund API**.
 
-- **Server Base URL**: `https://hedgeapi.afpicapital.com` (or `http://localhost:6000` for local dev)
+- **Server Base URL**: `https://hedgeapi.afpicapital.com`
 - **API Documentation**: `https://hedgeapi.afpicapital.com/docs`
 - **Health Check**: `https://hedgeapi.afpicapital.com/api/health`
 - **Swagger JSON**: `https://hedgeapi.afpicapital.com/static/swagger.json`
