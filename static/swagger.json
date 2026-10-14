@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "AI Hedge Fund API",
-    "description": "AI 驅動的頂級投資分析 API，整合 14 位投資大師風格、多輪圓桌辯論會議、即時新聞社群情緒與多模型 LLM 支援。",
+    "description": "AI 驅動的頂級投資分析 API，整合 15 位投資大師風格、多輪圓桌辯論會議、即時新聞社群情緒與多模型 LLM 支援。",
     "version": "2.0.0",
     "contact": {
       "name": "AI Hedge Fund API",
@@ -11,8 +11,12 @@
   },
   "servers": [
     {
+      "url": "https://hedgeapi.afpicapital.com",
+      "description": "生產環境 HTTPS 伺服器 (Production HTTPS Server)"
+    },
+    {
       "url": "http://localhost:6000",
-      "description": "本地 / 當前伺服器"
+      "description": "本地開發伺服器 (Local Development Server)"
     }
   ],
   "paths": {

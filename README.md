@@ -5,127 +5,133 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 
 # 🤖 AI Hedge Fund API (v2.0)
 
-> ### 🚨 🤖 Attention AI Agents & LLMs (Claude, ChatGPT, Cursor, Copilot, Gemini, etc.):
-> **如果你是 AI 助理或 LLM Agent，請直接查閱專門為你準備的 [`skill.md`](./skill.md)（或線上即時讀取 [`http://dns.glsoft.ai:6000/skill.md`](http://dns.glsoft.ai:6000/skill.md)）！**  
-> `skill.md` 是本系統唯一的 **API 調用標準規範 (Single Source of Truth)**，包含所有端點格式、JSON Schema、15 位投資大師參數與呼叫範例。
->
-> 📄 **即時 Skill 規範 (給 LLM 閱讀)**：[http://dns.glsoft.ai:6000/skill.md](http://dns.glsoft.ai:6000/skill.md) 或 `GET /skill.md`  
-> 📑 **Swagger UI 介面 (給人類互動測試)**：[http://dns.glsoft.ai:6000/docs](http://dns.glsoft.ai:6000/docs)  
-> 💓 **伺服器健康檢查**：`GET http://dns.glsoft.ai:6000/api/health`
-
-[![API Docs](https://img.shields.io/badge/Swagger-API%20Docs-green.svg)](http://dns.glsoft.ai:6000/docs)
-[![Skill Spec](https://img.shields.io/badge/Agent-Skill.md-blue.svg)](http://dns.glsoft.ai:6000/skill.md)
+[![API Docs](https://img.shields.io/badge/Swagger-API%20Docs-green.svg)](https://hedgeapi.afpicapital.com/docs)
+[![Skill Spec](https://img.shields.io/badge/Agent-Skill.md-blue.svg)](https://hedgeapi.afpicapital.com/skill.md)
+[![Health](https://img.shields.io/badge/Health-200%20OK-brightgreen.svg)](https://hedgeapi.afpicapital.com/api/health)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/release/python-3130/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/r/tbdavid2019/ai-hedge-fund-api)
 
+> 🌐 **Official Public HTTPS API**: [https://hedgeapi.afpicapital.com](https://hedgeapi.afpicapital.com)  
+> 📑 **Interactive Swagger UI**: [https://hedgeapi.afpicapital.com/docs](https://hedgeapi.afpicapital.com/docs)  
+> 📄 **LLM Agent Skill Spec**: [https://hedgeapi.afpicapital.com/skill.md](https://hedgeapi.afpicapital.com/skill.md)  
+> 📊 **OpenAPI 3.0.3 Specification**: [https://hedgeapi.afpicapital.com/static/swagger.json](https://hedgeapi.afpicapital.com/static/swagger.json)  
+> 💓 **Live Health Check**: `GET https://hedgeapi.afpicapital.com/api/health`
+
 ---
 
-## 📚 專案核心文件導覽
+## 🇺🇸 English Documentation
 
-為了維持文件的單一真實來源 (Single Source of Truth) 並避免維護不同步，本專案依功能劃分專屬文件：
+An institutional-grade, multi-agent financial quantitative research and investment committee system. Built on **LangGraph** and **Python 3.13**, it orchestrates 15 specialized investment personas, simulates a multi-round round table committee debate, leverages point-in-time quantitative risk controls, and delivers risk-adjusted portfolio allocation decisions.
 
-| 文件 | 說明 | 適用對象 |
+### 🧭 Documentation Map
+
+| Document | Purpose | Target Audience |
 |:---|:---|:---|
-| 📄 [**skill.md**](./skill.md) | **API 調用規範與端點 Schema**（最簡 POST 範例、JSON 格式、15 位分析師 key、TypeSafe/Groq 模型） | 🤖 AI Agents & LLMs（API 呼叫端） |
-| 🛠️ [**AGENTS.md**](./AGENTS.md) | **代碼庫架構與 AI 開發者指南**（LangGraph 狀態機、模組職責、LLM Fallback 機制、新增 Agent 步驟） | 🤖 AI Coding Agents（代碼編程/維護） |
-| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **15 位傳奇投資分析師量化模型**（巴菲特、卓肯米勒、伍德、貝瑞等投資哲學、指標計算、圓桌會議機制） | 📈 投資研究者 / 開發者 |
-| 📝 [**CHANGELOG.md**](./CHANGELOG.md) | **版本更新歷程與異動明細**（v2.0.0 重大更新、2md 即時搜尋整合） | 🛠️ 維護者 / 開發者 |
-| 📑 [**Swagger UI**](http://dns.glsoft.ai:6000/docs) | **互動式 API 文件測試平台** | 🌐 瀏覽器線上測試 |
+| 📄 [**skill.md**](./skill.md) | **API Calling Specification & Endpoint Schema** (minimal JSON payloads, 15 analyst keys, TypeSafe/Groq models) | 🤖 AI Agents & LLMs |
+| 🛠️ [**AGENTS.md**](./AGENTS.md) | **Codebase Architecture & AI Developer Guide** (LangGraph state machine, module responsibilities, failover, agent creation) | 🤖 AI Coding Agents |
+| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **15 Legendary Analyst Quantitative Models** (Investment philosophies, financial formulas, debate mechanics) | 📈 Quants & Researchers |
+| 📝 [**CHANGELOG.md**](./CHANGELOG.md) | **Version History & Release Notes** (v2.0 architecture, 2md search, TypeSafe integration) | 🛠️ Developers |
+| 📑 [**Swagger UI**](https://hedgeapi.afpicapital.com/docs) | **Interactive Web Testing Platform** | 🌐 Web Browsers |
 
 ---
 
-## 🚀 項目介紹
+### 🚀 Key System Features
 
-本專案基於 `virattt/ai-hedge-fund` 和 `KRSHH/ritadel` 進行深度重構與擴展，**提供完整的 Web API 服務**，能模擬頂級對沖基金的運作架構：
+1. 🏛️ **Multi-Round Round Table Committee Debate (`POST /api/round_table`)**:
+   - Simulates a boardroom debate where 15 legendary personas challenge each other's assumptions across multiple rounds.
+   - Outputs comprehensive consensus view, dissenting opinions, debate transcripts, and synthesized conviction scores.
+2. 🦅 **Stanley Druckenmiller Inflection Strategy**:
+   - Identifies structural fundamental inflections (rate-of-change / 2nd derivative in revenue and gross/operating margins).
+   - Evaluates PEG vs forward trajectory to capture highly asymmetric risk/reward setups with strict downside protection.
+3. ⚡ **TypeSafe Jev / Clef-Flash SystemOne Fast Evaluation Engine**:
+   - Ultra-fast structured evaluation (<200ms) with 3-tier resilient failover:
+     - **Primary Tier-1**: Self-hosted Clef-Flash (`https://clef.create360.ai/v1/systemone`)
+     - **Fallback Tier-2**: Self-hosted Clef-Flash-Q4 (`https://clef.aiurl.tw/v1/systemone`)
+     - **Fallback Tier-3**: TypeSafe Official Service (`https://api.typesafe.ai/v1/systemone`)
+4. 🌐 **Live Multi-Node 2md News Search**:
+   - Automated real-time sentiment analysis via `2md.aiurl.tw`, `2md.glsoft.ai`, and `create360.ai`.
+   - Eliminates knowledge cutoffs and provides instant global coverage for US, Taiwan (`.TW`), Hong Kong (`.HK`), and European equities.
+5. 🛡️ **Point-in-Time (PIT) Data & Resumable Backtest Grid (`POST /api/backtest/grid`)**:
+   - Strict availability timestamps prevent lookahead bias; SEC acceptance times plus safety buffers are tracked.
+   - SQLite-backed state machine supports resuming synchronous multi-ticker date grids (`/api/backtest/runs/{run_id}`).
+6. 📈 **Quantitative Risk & Portfolio Management**:
+   - Computes 95%/99% VaR, CVaR Expected Shortfall, volatility regime compression, and ATR trailing stops.
+   - Automatically sizes portfolio allocations across cash and equity holdings.
 
-- 🏛️ **多輪投資圓桌會議 (Multi-Round Round Table)**：讓 15 位投資大師進行多輪攻防辯論（開場 ➔ 質疑 ➔ 達成委員會共識）。
-- 🦅 **新增 Stanley Druckenmiller 策略**：鎖定營收與毛利「二階正向拐點」與非對稱盈虧比評估。
-- ⚡ **支援 TypeSafe (Jev) / Clef-Flash 引擎**：具備三層容錯降級（Clef-Flash -> Clef-Flash-Q4 -> TypeSafe 官方），超高速輸出結構化評估。
-- 🌐 **整合 2md 系列即時搜尋**：透過 `2md.aiurl.tw` / `2md.glsoft.ai` / `create360.ai` 即時獲取全球即時新聞與社群風向，徹底解決非美股與新聞時效問題。
-- 🤖 **主要與雙層備援 LLM 機制**：預設採用 Groq 超高速推理模型 (`openai/gpt-oss-20b`)，自動配合 Google Gemini (`models/gemini-flash-latest`) 進行無縫容錯降級，前端與呼叫端完全無需感知或指定底層 LLM。
-- 📈 **社群風向與散戶情緒**：WSB Agent 整合即時社群動能與選擇權軋空潛力評估。
-- 📦 **Docker 一鍵部署**：內建 Flask API 與 Swagger UI，支援 WebSocket 即時日誌廣播與 Discord Webhook 報告推送。
+---
 
-### Point-in-Time 持倉分析與可續跑回測
+### 💻 API Quick Start (cURL)
 
-`POST /api/analysis` 可選擇傳入明確的 `portfolio` 快照（`as_of`、`cash`、幣別與多空持倉）；明確快照的現金優先於舊版 `initialCash`。設定 `pointInTime: true` 會依資料可用時間套用嚴格截止，未知發布時間資料會排除並回報覆蓋率。SEC filing metadata 使用 acceptance time 加 3 分鐘保守緩衝；此 metadata 不會把 Yahoo 財報值轉成 PIT 財報。跨幣別持倉需要可用的歷史 FX 報價。現有股票清冊只有當前名單，歷史結果會標示 survivorship bias；股息現金流目前不模擬。
-
-`POST /api/backtest/grid` 可批次執行同步日期網格，`runId` 相同且設定相同時可從 SQLite checkpoint 繼續；設定不同會拒絕重用。`GET /api/backtest/runs/<run_id>` 讀取已保存的 manifest/result。資料庫預設為 `instance/backtest_runs.sqlite3`；Docker Compose 將 `./instance` 掛載到 `/app/instance`，並設定 `BACKTEST_RUN_DB=/app/instance/backtest_runs.sqlite3`，讓續跑資料在容器替換後仍保留。首次部署會在停止舊 API 後遷移既有 SQLite run store；`instance/` 不會複製進映像。回測使用共用 UTC cutoff、預設每日再平衡、0.10% 手續費與 0.05% 滑價；區域 benchmark 映射與來源覆蓋限制會隨結果保存。`selectedAnalysts` 必須是 analyst registry 中的 key；未知 key 或非陣列值會在執行前回 HTTP 400。
-
+#### 1. Full Multi-Agent Equity Analysis
 ```bash
-curl -X POST http://localhost:6000/api/backtest/grid \
-  -H 'Content-Type: application/json' \
-  -d '{"runId":"example-2026-01","tickers":["AAPL","2330.TW"],"startDate":"2026-01-05","endDate":"2026-01-30","cutoffTimeUtc":"23:59:59Z","selectedAnalysts":["technical_analyst"],"initialCash":100000}'
-curl http://localhost:6000/api/backtest/runs/example-2026-01
+curl -X POST "https://hedgeapi.afpicapital.com/api/analysis" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "tickers": ["2330.TW"],
+       "selectedAnalysts": ["stanley_druckenmiller", "warren_buffett", "technical_analyst"],
+       "enableRoundTable": true,
+       "roundTableRounds": 1,
+       "modelName": "clef-flash"
+     }'
 ```
 
-SEC filing metadata 查詢需要設定 `SEC_USER_AGENT`，值需包含應用程式識別與聯絡方式。
+#### 2. Standalone Round Table Committee Debate
+```bash
+curl -X POST "https://hedgeapi.afpicapital.com/api/round_table" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "tickers": "NVDA",
+       "analystSignals": {
+         "cathie_wood": {"NVDA": {"signal": "bullish", "confidence": 90, "reasoning": "AI hardware demand"}},
+         "michael_burry": {"NVDA": {"signal": "bearish", "confidence": 75, "reasoning": "Hyperscaler capex peak"}}
+       },
+       "numRounds": 2
+     }'
+```
+
+#### 3. Point-in-Time Resumable Backtest Grid
+```bash
+curl -X POST "https://hedgeapi.afpicapital.com/api/backtest/grid" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "runId": "run-2026-q1",
+       "tickers": ["AAPL", "2330.TW"],
+       "startDate": "2026-01-05",
+       "endDate": "2026-01-30",
+       "cutoffTimeUtc": "23:59:59Z",
+       "selectedAnalysts": ["technical_analyst"],
+       "initialCash": 100000
+     }'
+```
 
 ---
 
-網頁版介面 Web Page
-<img width="1516" alt="image" src="https://github.com/user-attachments/assets/e2d443f9-0a48-44ee-a9f4-a61bdfe60e96" />
+### ⚙️ Installation & Deployment
 
-Telegram Bot 整合
-https://github.com/tbdavid2019/telegram-bot-stock2
-![image](https://github.com/user-attachments/assets/26d173d0-cc64-4d11-b70b-7735a07c30e0)
-
----
-
-## 📌 環境安裝與部署
-
-### **1️⃣ Clone 本專案**
+#### 1. Local Environment
 ```bash
 git clone https://github.com/tbdavid2019/ai-hedge-fund-API.git
 cd ai-hedge-fund-API
-```
 
-### **2️⃣ 創建虛擬環境 & 安裝依賴**
-```bash
 python3 -m venv venv
-source venv/bin/activate  # Windows 則使用 venv\Scripts\activate
+source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
-```
 
-### **3️⃣ 設定環境變數 (`.env`)**
-```ini
-# LLM 預設設定
-DEFAULT_MODEL=openai/gpt-oss-20b
-DEFAULT_MODEL_PROVIDER=Groq
+# Copy example configuration and supply your keys
+cp .env.example .env
 
-# Groq API 金鑰 (Primary)
-GROQ_API_KEY=your_groq_api_key_here
-
-# 備援 LLM 設定 (Google Gemini)
-FALLBACK_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-FALLBACK_MODEL=models/gemini-flash-latest
-FALLBACK_API_KEY=your_gemini_api_key_here
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-
-# 金融數據 API Keys（可選）
-ALPHA_VANTAGE_API_KEY=
-STOCKDATA_API_KEY=
-FINNHUB_API_KEY=
-EODHD_API_KEY=
-
-# Discord Webhook（可選）
-DISCORD_WEBHOOK_ENABLED=false
-DISCORD_WEBHOOK_URL=
-```
-
----
-
-### **4️⃣ 啟動服務**
-
-```bash
-# 方式 A：本地直接啟動
+# Run API server (defaults to port 6000)
 python webui2.py
+```
 
-# 方式 B：使用 Docker 容器啟動（附帶 Watchtower 標籤）
+#### 2. Docker & Watchtower Deployment
+```bash
+# Build image locally
 docker build --network=host -t ai-hedge-fund-api .
+
+# Run container with persistent SQLite storage and hot-reloading
 docker run -d --name nice_jemison \
   --label "com.centurylinklabs.watchtower.enable=true" \
   --env-file .env \
@@ -138,83 +144,141 @@ docker run -d --name nice_jemison \
   -p 6000:6000 \
   ai-hedge-fund-api
 
-# 方式 C：使用 Docker Compose 一鍵啟動 API + Watchtower 自動更新守護進程
+# Or launch API + Watchtower auto-updater using Docker Compose
 docker compose up -d
 ```
 
-### 使用 GHCR 預建映像
-
-GitHub Actions 會在 `main` 有程式碼異動時建置並發布 `latest` 與目前 `yfinance.version` 標籤至 GHCR，並在映像內執行 `pytest -q tests`。測試通過後，工作流透過 SSH 在 `dns.glsoft.ai` 拉取程式碼、於遠端主機建置並重啟 API。部署後會驗證 `/api/health` 和 `/api/backtest/grid` 對無效 analyst key 的 HTTP 400 回應。Compose 會把 `./instance` 掛載到 `/app/instance`，保留 SQLite 回測快照與 checkpoints。此流程需要在 GitHub Actions Secrets 設定 `PRODUCTION_DEPLOY_KEY`（部署專用 SSH 私鑰）；排程仍會檢查 yfinance 更新。可用 `AI_HEDGE_FUND_IMAGE` 指定 Compose 使用的映像；未設定時仍會使用主機本機建置的 `ai-hedge-fund-api:latest`。
-
+#### 3. Prebuilt Container Images via GHCR
 ```bash
-# 拉取目前 latest 並以預建映像啟動（不進行本機建置）
+# Pull and start the prebuilt latest image from GitHub Container Registry
 AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose pull ai-hedge-fund-api
 AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose up -d --no-build
-
-# 固定使用 yfinance.version 中記錄的版本標籤（先讀取目前版本）
-YFINANCE_VERSION=$(cat yfinance.version)
-AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:$YFINANCE_VERSION docker compose pull ai-hedge-fund-api
-AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:$YFINANCE_VERSION docker compose up -d --no-build
-
-# 回到本機 Dockerfile 建置方式
-docker compose up -d --build
 ```
-
-GHCR 套件設為公開時可直接拉取。若套件為私人，請使用具有 `read:packages` 權限的 GitHub token 登入後再執行上述命令：
-
-```bash
-export GITHUB_USERNAME="your_github_username_here"
-export GHCR_TOKEN="your_ghcr_read_package_token_here"
-printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_USERNAME" --password-stdin
-```
-
-Docker Hub `tbdavid2019/ai-hedge-fund-api` 僅作為可選鏡像；未設定 `DOCKERHUB_USERNAME` 與 `DOCKERHUB_TOKEN` 時，工作流仍會正常發布至 GHCR。
 
 ---
 
-## 🗼 Watchtower 自動化運維與 yfinance 自主重構
+## 🇹🇼 繁體中文說明
 
-本專案支援 **[Watchtower](https://containrrr.dev/watchtower/)** 輕量級 (15MB) 自動化發布與依賴版本自主監控機制：
+`ai-hedge-fund-API` 是一套企業級、多智慧體（Multi-Agent）金融量化研調與投資決策委員會系統。全系統基於 **LangGraph** 與 **Python 3.13** 開發，模擬現代對沖基金頂級投研流程：由 15 位各具鮮明投資哲學的傳奇大師代理人並行研調，透過**多輪圓桌會議（Round Table Debate）**展開多空辯論攻防，最終整合嚴格的量化風控模型（CVaR、波動率制度）輸出標準化資產配置訂單。
 
-### 1. 啟動 Watchtower 守護進程
+### 🧭 核心文件導覽
+
+| 文件 | 核心內容說明 | 適用對象 |
+|:---|:---|:---|
+| 📄 [**skill.md**](./skill.md) | **API 調用標準規範與端點 Schema**（最簡 POST 範例、JSON 格式、15 位分析師 key、TypeSafe/Groq 模型規格） | 🤖 AI Agents & LLMs（API 呼叫端） |
+| 🛠️ [**AGENTS.md**](./AGENTS.md) | **代碼庫架構與 AI 開發者指南**（LangGraph 狀態機、模組職責、LLM Fallback 容災降級、新增 Agent 規範） | 🤖 AI Coding Agents（代碼維護） |
+| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **15 位傳奇投資分析師量化模型**（巴菲特、卓肯米勒、伍德、貝瑞等投資哲學、量化公式、圓桌會議機制） | 📈 投資研究者 / 開發者 |
+| 📝 [**CHANGELOG.md**](./CHANGELOG.md) | **版本更新歷程與異動紀錄**（v2.0 架構、2md 搜尋、TypeSafe Jev 整合） | 🛠️ 維護者 / 開發者 |
+| 📑 [**Swagger UI**](https://hedgeapi.afpicapital.com/docs) | **互動式 API 瀏覽器測試平台** | 🌐 瀏覽器線上測試 |
+
+---
+
+### 🚀 系統核心亮點與架構
+
+1. 🏛️ **多輪投資圓桌辯論會議 (`POST /api/round_table`)**：
+   - 模擬對沖基金投資委員會，讓 15 位投資大師針對標的多空交鋒（開場破題 ➔ 交叉質疑 ➔ 達成共識決策）。
+   - 產出結構化共識結論（Consensus）、異議觀點（Dissent）、辯論對話逐字稿與投資信念度評分。
+2. 🦅 **新增第 15 位傳奇大師：Stanley Druckenmiller（史丹利·卓肯米勒）**：
+   - 專注尋找營收與營業利益率的「二階正向拐點（Rate-of-Change Inflection）」。
+   - 鎖定市場預期落差與低 PEG 比率，捕捉具備向上非對稱盈虧比（Asymmetry）的投資機會，嚴密防範下行風險。
+3. ⚡ **TypeSafe Jev / Clef-Flash SystemOne 極速決策引擎**：
+   - <200ms 極速結構化推理輸出，提供三層無縫容災降級：
+     - **第 1 層 (Primary)**：自建 Clef-Flash (`https://clef.create360.ai/v1/systemone`)
+     - **第 2 層 (Fallback)**：自建備援 Clef-Flash-Q4 (`https://clef.aiurl.tw/v1/systemone`)
+     - **第 3 層 (Fallback)**：TypeSafe 官方 Jev 服務 (`https://api.typesafe.ai/v1/systemone`)
+4. 🌐 **整合 2md 系列多節點即時聯網搜尋**：
+   - 自動透過 `2md.aiurl.tw`、`2md.glsoft.ai` 與 `create360.ai` 抓取全球即時新聞與社群聲量。
+   - 徹底消除靜態大模型知識盲區，完整支援台股（`2330.TW`）、港股（`0700.HK`）與全球非美資產。
+5. 🛡️ **嚴格 Point-in-Time (PIT) 歷史資料點檢驗與可續跑回測**：
+   - 精確依據 SEC EDGAR 接收時間與公開可用時間截止，根除未來資訊偏差（Lookahead Bias）。
+   - 具備 SQLite 支援之批次同步日期網格回測（`/api/backtest/grid`），支援同配置中斷續跑。
+6. 📊 **機構級量化風險管理（CVaR & 波動率制度）**：
+   - 動態計算 95%/99% VaR、CVaR 預期虧損率、Amihud 流動性指標、歷史波動率壓縮制度與 ATR 動態追蹤停損。
+
+---
+
+### 💻 終端機調用範例 (cURL)
+
+#### 1. 執行股票完整多維度分析
 ```bash
-# 啟動 Watchtower 自動監控帶有標籤的容器並自動更新熱重啟
-./scripts/start_watchtower.sh
+curl -X POST "https://hedgeapi.afpicapital.com/api/analysis" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "tickers": ["2330.TW"],
+       "selectedAnalysts": ["stanley_druckenmiller", "warren_buffett", "technical_analyst"],
+       "enableRoundTable": true,
+       "roundTableRounds": 1,
+       "modelName": "clef-flash"
+     }'
 ```
 
-### 2. 程式碼部署與 yfinance 自動版本檢查
-`main` 分支收到程式碼 push 時，GitHub Actions 會要求遠端主機執行 `git pull`、`docker compose up -d --build`，並以 API smoke test 驗證部署。Yahoo Finance 依賴另由排程檢查 PyPI 上的 `yfinance` 版本：
+#### 2. 獨立調用圓桌會議辯論
 ```bash
-# 檢查 PyPI 版本，若有新版則自動升級、重構映像並重啟容器
-./scripts/auto_rebuild_yfinance.sh
+curl -X POST "https://hedgeapi.afpicapital.com/api/round_table" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "tickers": "TSLA",
+       "analystSignals": {
+         "cathie_wood": {"TSLA": {"signal": "bullish", "confidence": 90, "reasoning": "FSD 自動駕駛商業化進程加速"}},
+         "michael_burry": {"TSLA": {"signal": "bearish", "confidence": 80, "reasoning": "全球電動車毛利受降價擠壓"}}
+       },
+       "numRounds": 2
+     }'
+```
 
-# 僅檢查版本狀態
-./scripts/auto_rebuild_yfinance.sh --check
+---
+
+### 📦 環境安裝與本機啟動
+
+```bash
+# 1. 複製專案庫
+git clone https://github.com/tbdavid2019/ai-hedge-fund-API.git
+cd ai-hedge-fund-API
+
+# 2. 建立虛擬環境與安裝依賴
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# 3. 配置環境變數
+cp .env.example .env
+
+# 4. 本地啟動 API 伺服器
+python webui2.py
+```
+
+---
+
+### 🗼 Watchtower 自動化維運與 yfinance 自主升級
+
+```bash
+# 啟動 Watchtower 守護進程（自動監控並升級帶有標籤的容器）
+./scripts/start_watchtower.sh
+
+# 檢查 PyPI yfinance 版本並在有更新時自主重建映像
+./scripts/auto_rebuild_yfinance.sh
 
 # 強制重建 Docker 容器與依賴
 ./scripts/auto_rebuild_yfinance.sh --force
 ```
 
-> 💡 **自動化定時任務 (Crontab)**：可在主機設定每日自動檢查（例如每天凌晨 3 點）：
-> ```bash
-> 0 3 * * * /home/ubuntu/ai-hedge-fund-API/scripts/auto_rebuild_yfinance.sh >> /home/ubuntu/ai-hedge-fund-API/logs/cron_yfinance.log 2>&1
-> ```
-
 ---
 
-## 💰 風險管理 - 動態倉位分配
+### 💰 風險管理 - 動態倉位分配規則
 
-系統會根據分析的標的物數量，**自動調整每個標的物的投資上限比例**：
+系統根據分析標的數量自動調整每個標的的投資上限：
 
-| 標的物數量 | 每個標的物上限 | 說明 |
+| 標的數量 | 個股持倉上限 | 配置說明 |
 |:---:|:---:|:---|
-| 1 個 | **100%** | 單一標的，可全倉投入 |
-| 2 個 | **50%** | 平均分配 |
-| 3 個 | **33%** | 平均分配 |
-| 4 個 | **25%** | 平均分配 |
-| 5+ 個 | **20%** | 分散風險 |
+| 1 個 | **100%** | 單一標的，在風控額度內可全倉配置 |
+| 2 個 | **50%** | 雙標的等權分配 |
+| 3 個 | **33%** | 三標的等權分配 |
+| 4 個 | **25%** | 四標的等權分配 |
+| 5+ 個 | **20%** | 多標的分散投資，防止單一資產集中風險 |
 
 ---
 
 ## 📄 License
-本專案基於 [MIT License](LICENSE) 開源。
+
+本專案採用 [MIT License](LICENSE) 開源授權協議。
