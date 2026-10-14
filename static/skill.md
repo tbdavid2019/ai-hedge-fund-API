@@ -1,6 +1,6 @@
 ---
 name: ai-hedge-fund
-description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 14 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation) and multi-round round table debates with dynamic portfolio allocation.
+description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 15 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation, Druckenmiller) and multi-round round table debates with dynamic portfolio allocation.
 ---
 
 # 🤖 AI Hedge Fund API - Agent Skill Guide
@@ -11,7 +11,7 @@ This document is designed for AI Agents and LLMs to understand and interact with
 - **API Documentation**: `http://localhost:6000/docs`
 - **Health Check**: `http://localhost:6000/api/health`
 - **Swagger JSON**: `http://localhost:6000/static/swagger.json`
-- **Default LLM Engine**: Groq (`openai/gpt-oss-20b`) managed automatically by backend with resilient Gemini failover.
+- **Supported LLM Engines**: Primary Groq (`openai/gpt-oss-20b`), TypeSafe SystemOne (`clef-flash`, `clef-flash-q4`), Gemini fallback (`models/gemini-flash-latest`), and OpenAI (`gpt-4o`). Resilient auto-failover built-in.
 
 ---
 
@@ -57,7 +57,9 @@ Execute deep investment analysis across selected AI investor personas with optio
 | Parameter | Type | Required | Default | Description |
 |:---|:---|:---:|:---|:---|
 | `tickers` | string / array | ✅ | - | Tickers or company names across US, HK, TW (e.g. `"TSLA,NVDA"`, `"2330"`, `"3293"`, `"700"`, `"9988"`, `"騰訊"`, `"蘋果"`, `"SPCX"`) |
-| `selectedAnalysts` | array | ❌ | `[]` (all 14) | Analyst registry keys; unknown keys or non-array values return HTTP 400 |
+| `selectedAnalysts` | array | ❌ | `[]` (all 15) | Analyst registry keys; unknown keys or non-array values return HTTP 400 |
+| `modelName` | string | ❌ | `openai/gpt-oss-20b` | Model identifier: `clef-flash`, `clef-flash-q4`, `openai/gpt-oss-20b`, `models/gemini-flash-latest`, `gpt-4o` |
+| `modelProvider` | string | ❌ | `Groq` | Model provider: `TypeSafe`, `Groq`, `Gemini`, `OpenAI` (`clef-flash` automatically maps to `TypeSafe`) |
 | `enableRoundTable` | boolean | ❌ | `false` | Enable multi-round debate committee after analyst signals |
 | `roundTableRounds` | integer | ❌ | `2` | Number of debate rounds (1 to 3) |
 | `initialCash` | number | ❌ | `100000` | Starting portfolio cash |
@@ -202,7 +204,7 @@ Run an investment committee debate with pre-computed analyst signals.
 This repository ships with a built-in standard **MCP Server** ([`mcp_server.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/mcp_server.py)) compatible with **Cursor**, **Claude Desktop**, **Windsurf**, and **Antigravity**.
 
 ### Available MCP Tools:
-1. `analyze_stock_with_committee`: Run full 14-persona hedge fund analysis and round table debate.
+1. `analyze_stock_with_committee`: Run full 15-persona hedge fund analysis and round table debate.
 2. `get_stock_quant_audit`: Instant quantitative audit returning 95%/99% VaR, CVaR, Realized Volatility Regimes, 5×5 DCF Sensitivity Matrix, Altman Z-Score (bankruptcy risk), Piotroski F-Score (0-9 financial health), Amihud Illiquidity Ratio, and ATR Dynamic Trailing Stops.
 
 ### Claude Desktop / Cursor Configuration:
@@ -224,6 +226,6 @@ This repository ships with a built-in standard **MCP Server** ([`mcp_server.py`]
 
 ## 🛡️ JSON Compliance & Strict Parsing Guarantees (RFC 8259)
 
-- **Zero `NaN` / `Infinity` Guarantee**: All numerical metrics across all 14 analysts (e.g. `momentum_6m`, `historical_volatility`, `volatility_z_score`, `z_score`, `atr_ratio`, `dcf_value`, etc.) are strictly sanitized to standard JSON floats or `null`.
+- **Zero `NaN` / `Infinity` Guarantee**: All numerical metrics across all 15 analysts (e.g. `momentum_6m`, `historical_volatility`, `volatility_z_score`, `z_score`, `atr_ratio`, `dcf_value`, etc.) are strictly sanitized to standard JSON floats or `null`.
 - **Node.js & TypeScript 100% Safe**: Never triggers `SyntaxError: Unexpected token 'N' (NaN is not valid JSON)` when executing `JSON.parse()` in Node.js, Next.js API routes (`route.ts`), Python, Go, or browser clients.
 - **Graceful Insufficient Data Handling**: When historical price days are shorter than rolling indicator windows (e.g. calculating 6-month momentum on a 3-month timeframe), indicators automatically use `min_periods=1` and fallback to valid numbers or `null`.

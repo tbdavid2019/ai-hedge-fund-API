@@ -35,6 +35,18 @@
 - 系統化捕捉財報發布後盈餘驚喜（EPS Beat / Miss）的股價動能漂移信號。
 - 嚴格 Point-in-Time 檢驗（排除發布日後的未來資訊）與時間線性衰減加權，導出客觀數值信念度（Conviction `[-1.0, 1.0]`）。
 
+### 📖 [Docs] 全面同步 API 文件與 OpenAPI 規格
+- **OpenAPI 3.0.3 規範 ([`static/swagger.json`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/static/swagger.json))**：
+  - 更新 `selectedAnalysts` enum 納入 `stanley_druckenmiller`，註釋同步更新為「全部 15 位分析師」。
+  - 補齊 `modelName` 與 `modelProvider` 參數屬性定義，明確列出 `clef-flash`、`clef-flash-q4`、`openai/gpt-oss-20b`、`models/gemini-flash-latest` 等選項。
+- **Agent Skill 規範 ([`skill.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/skill.md) & [`static/skill.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/static/skill.md))**：
+  - 全面更新為 15 位傳奇投資大師（15-persona）。
+  - Request Parameters 表格補充 `modelName` 與 `modelProvider` 參數欄位與預設值。
+  - 同步更新 MCP 工具 `analyze_stock_with_committee` 與數值 Sanitization 保證為 15 位分析師。
+- **項目首頁與指引 ([`README.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/README.md))**：
+  - 核心導覽與簡介全面更新為 15 位投資大師。
+  - 新增 Stanley Druckenmiller 策略亮點與 TypeSafe (Jev) / Clef-Flash 三級容災結構化決策引擎特點說明。
+
 ### 🚀 程式碼 Push 自動建置、遠端部署與 API 驗證
 - `main` 上的程式碼變更會觸發 GHCR 映像建置，並透過專用 GitHub Actions SSH key 在 `dns.glsoft.ai` 拉取程式碼、遠端建置與重啟 API。
 - 部署流程會檢查 `/api/health`，並以無效回測輸入驗證 `/api/backtest/grid` 路由。

@@ -286,7 +286,7 @@
           },
           "selectedAnalysts": {
             "type": "array",
-            "description": "分析師 key 陣列，必須來自 analyst registry；未知 key 或非陣列值會在工作開始前回 HTTP 400。空陣列表示使用全部 14 位分析師。",
+            "description": "分析師 key 陣列，必須來自 analyst registry；未知 key 或非陣列值會在工作開始前回 HTTP 400。空陣列表示使用全部 15 位分析師。",
             "items": {
               "type": "string",
               "enum": [
@@ -303,9 +303,21 @@
                 "technical_analyst",
                 "fundamentals_analyst",
                 "sentiment_analyst",
-                "valuation_analyst"
+                "valuation_analyst",
+                "stanley_druckenmiller"
               ]
             }
+          },
+          "modelName": {
+            "type": "string",
+            "description": "使用的 LLM 模型名稱，例如 clef-flash, clef-flash-q4, openai/gpt-oss-20b, models/gemini-flash-latest, gpt-4o",
+            "default": "openai/gpt-oss-20b",
+            "example": "clef-flash"
+          },
+          "modelProvider": {
+            "type": "string",
+            "description": "LLM 提供商（TypeSafe, Groq, Gemini, OpenAI 等），若傳入 clef-flash 系列將自動推斷為 TypeSafe",
+            "example": "TypeSafe"
           },
           "enableRoundTable": {
             "type": "boolean",

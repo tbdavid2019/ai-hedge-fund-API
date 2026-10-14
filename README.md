@@ -1,13 +1,13 @@
 ---
 name: ai-hedge-fund
-description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 14 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation) and multi-round round table debates with dynamic portfolio allocation.
+description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 15 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation, Druckenmiller) and multi-round round table debates with dynamic portfolio allocation.
 ---
 
 # 🤖 AI Hedge Fund API (v2.0)
 
 > ### 🚨 🤖 Attention AI Agents & LLMs (Claude, ChatGPT, Cursor, Copilot, Gemini, etc.):
 > **如果你是 AI 助理或 LLM Agent，請直接查閱專門為你準備的 [`skill.md`](./skill.md)（或線上即時讀取 [`http://dns.glsoft.ai:6000/skill.md`](http://dns.glsoft.ai:6000/skill.md)）！**  
-> `skill.md` 是本系統唯一的 **API 調用標準規範 (Single Source of Truth)**，包含所有端點格式、JSON Schema、14 位投資大師參數與呼叫範例。
+> `skill.md` 是本系統唯一的 **API 調用標準規範 (Single Source of Truth)**，包含所有端點格式、JSON Schema、15 位投資大師參數與呼叫範例。
 >
 > 📄 **即時 Skill 規範 (給 LLM 閱讀)**：[http://dns.glsoft.ai:6000/skill.md](http://dns.glsoft.ai:6000/skill.md) 或 `GET /skill.md`  
 > 📑 **Swagger UI 介面 (給人類互動測試)**：[http://dns.glsoft.ai:6000/docs](http://dns.glsoft.ai:6000/docs)  
@@ -27,9 +27,9 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 
 | 文件 | 說明 | 適用對象 |
 |:---|:---|:---|
-| 📄 [**skill.md**](./skill.md) | **API 調用規範與端點 Schema**（最簡 POST 範例、JSON 格式、14 位分析師 key） | 🤖 AI Agents & LLMs（API 呼叫端） |
+| 📄 [**skill.md**](./skill.md) | **API 調用規範與端點 Schema**（最簡 POST 範例、JSON 格式、15 位分析師 key、TypeSafe/Groq 模型） | 🤖 AI Agents & LLMs（API 呼叫端） |
 | 🛠️ [**AGENTS.md**](./AGENTS.md) | **代碼庫架構與 AI 開發者指南**（LangGraph 狀態機、模組職責、LLM Fallback 機制、新增 Agent 步驟） | 🤖 AI Coding Agents（代碼編程/維護） |
-| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **14 位傳奇投資分析師量化模型**（巴菲特、伍德、貝瑞等投資哲學、指標計算、圓桌會議機制） | 📈 投資研究者 / 開發者 |
+| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **15 位傳奇投資分析師量化模型**（巴菲特、卓肯米勒、伍德、貝瑞等投資哲學、指標計算、圓桌會議機制） | 📈 投資研究者 / 開發者 |
 | 📝 [**CHANGELOG.md**](./CHANGELOG.md) | **版本更新歷程與異動明細**（v2.0.0 重大更新、2md 即時搜尋整合） | 🛠️ 維護者 / 開發者 |
 | 📑 [**Swagger UI**](http://dns.glsoft.ai:6000/docs) | **互動式 API 文件測試平台** | 🌐 瀏覽器線上測試 |
 
@@ -39,7 +39,9 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 
 本專案基於 `virattt/ai-hedge-fund` 和 `KRSHH/ritadel` 進行深度重構與擴展，**提供完整的 Web API 服務**，能模擬頂級對沖基金的運作架構：
 
-- 🏛️ **多輪投資圓桌會議 (Multi-Round Round Table)**：讓 14 位投資大師進行多輪攻防辯論（開場 ➔ 質疑 ➔ 達成委員會共識）。
+- 🏛️ **多輪投資圓桌會議 (Multi-Round Round Table)**：讓 15 位投資大師進行多輪攻防辯論（開場 ➔ 質疑 ➔ 達成委員會共識）。
+- 🦅 **新增 Stanley Druckenmiller 策略**：鎖定營收與毛利「二階正向拐點」與非對稱盈虧比評估。
+- ⚡ **支援 TypeSafe (Jev) / Clef-Flash 引擎**：具備三層容錯降級（Clef-Flash -> Clef-Flash-Q4 -> TypeSafe 官方），超高速輸出結構化評估。
 - 🌐 **整合 2md 系列即時搜尋**：透過 `2md.aiurl.tw` / `2md.glsoft.ai` / `create360.ai` 即時獲取全球即時新聞與社群風向，徹底解決非美股與新聞時效問題。
 - 🤖 **主要與雙層備援 LLM 機制**：預設採用 Groq 超高速推理模型 (`openai/gpt-oss-20b`)，自動配合 Google Gemini (`models/gemini-flash-latest`) 進行無縫容錯降級，前端與呼叫端完全無需感知或指定底層 LLM。
 - 📈 **社群風向與散戶情緒**：WSB Agent 整合即時社群動能與選擇權軋空潛力評估。
