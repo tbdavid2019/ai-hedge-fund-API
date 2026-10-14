@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AI Hedge Fund MCP (Model Context Protocol) Server
-Exposes 14 legendary investor personas, institutional quant models (VaR, CVaR, DCF sensitivity, Z-Score, F-Score),
+Exposes 16 legendary investor personas, institutional quant models (VaR, CVaR, DCF sensitivity, Z-Score, F-Score),
 and round-table committee debates as standard MCP tools for Cursor, Claude Desktop, Windsurf, and Antigravity.
 """
 
@@ -32,7 +32,7 @@ from src.quant.technicals import calculate_amihud_illiquidity, calculate_atr_dyn
 # Initialize FastMCP Server
 mcp = FastMCP(
     "ai-hedge-fund",
-    instructions="Institutional AI Hedge Fund with 14 legendary investor personas (Buffett, Burry, Wood, Ackman, Pelosi, Lynch, etc.), quantitative risk/valuation models (VaR/CVaR/Altman Z/Piotroski F), and multi-round investment committee debates."
+    instructions="Institutional AI Hedge Fund with 16 legendary investor personas (Buffett, Burry, Wood, Ackman, Pelosi, Lynch, Druckenmiller, Decision Model, etc.), quantitative risk/valuation models (VaR/CVaR/Altman Z/Piotroski F), and multi-round investment committee debates."
 )
 
 
@@ -53,7 +53,8 @@ def analyze_stock_with_committee(
         analysts: Comma-separated list of analyst personas. Available:
                   warren_buffett, charlie_munger, ben_graham, cathie_wood, bill_ackman,
                   nancy_pelosi, michael_burry, peter_lynch, phil_fisher, wsb_agent,
-                  technicals, fundamentals, sentiment, valuation, risk_manager
+                  technicals, fundamentals, sentiment, valuation, stanley_druckenmiller,
+                  decision_model, risk_manager
         enable_round_table: Whether to simulate a multi-round debate among selected personas
         round_table_rounds: Number of debate rounds (default: 1)
         initial_cash: Initial portfolio cash for position sizing (default: 100000.0)

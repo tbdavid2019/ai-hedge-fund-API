@@ -39,7 +39,7 @@ An institutional-grade, multi-agent financial quantitative research and investme
 ### 🚀 Key System Features
 
 1. 🏛️ **Multi-Round Round Table Committee Debate (`POST /api/round_table`)**:
-   - Simulates a boardroom debate where 15 legendary personas challenge each other's assumptions across multiple rounds.
+   - Simulates a boardroom debate where 16 legendary personas challenge each other's assumptions across multiple rounds.
    - Outputs comprehensive consensus view, dissenting opinions, debate transcripts, and synthesized conviction scores.
 2. 🦅 **Stanley Druckenmiller Inflection Strategy**:
    - Identifies structural fundamental inflections (rate-of-change / 2nd derivative in revenue and gross/operating margins).
@@ -166,15 +166,15 @@ AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose 
 
 ## 🇹🇼 繁體中文說明
 
-`ai-hedge-fund-API` 是一套企業級、多智慧體（Multi-Agent）金融量化研調與投資決策委員會系統。全系統基於 **LangGraph** 與 **Python 3.13** 開發，模擬現代對沖基金頂級投研流程：由 15 位各具鮮明投資哲學的傳奇大師代理人並行研調，透過**多輪圓桌會議（Round Table Debate）**展開多空辯論攻防，最終整合嚴格的量化風控模型（CVaR、波動率制度）輸出標準化資產配置訂單。
+`ai-hedge-fund-API` 是一套企業級、多智慧體（Multi-Agent）金融量化研調與投資決策委員會系統。全系統基於 **LangGraph** 與 **Python 3.13** 開發，模擬現代對沖基金頂級投研流程：由 16 位各具鮮明投資哲學的傳奇大師代理人並行研調，透過**多輪圓桌會議（Round Table Debate）**展開多空辯論攻防，最終整合嚴格的量化風控模型（CVaR、波動率制度）輸出標準化資產配置訂單。
 
 ### 🧭 核心文件導覽
 
 | 文件 | 核心內容說明 | 適用對象 |
 |:---|:---|:---|
-| 📄 [**skill.md**](./skill.md) | **API 調用標準規範與端點 Schema**（最簡 POST 範例、JSON 格式、15 位分析師 key、TypeSafe/Groq 模型規格） | 🤖 AI Agents & LLMs（API 呼叫端） |
+| 📄 [**skill.md**](./skill.md) | **API 調用標準規範與端點 Schema**（最簡 POST 範例、JSON 格式、16 位分析師 key、TypeSafe/Groq 模型規格） | 🤖 AI Agents & LLMs（API 呼叫端） |
 | 🛠️ [**AGENTS.md**](./AGENTS.md) | **代碼庫架構與 AI 開發者指南**（LangGraph 狀態機、模組職責、LLM Fallback 容災降級、新增 Agent 規範） | 🤖 AI Coding Agents（代碼維護） |
-| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **15 位傳奇投資分析師量化模型**（巴菲特、卓肯米勒、伍德、貝瑞等投資哲學、量化公式、圓桌會議機制） | 📈 投資研究者 / 開發者 |
+| 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **16 位傳奇投資分析師量化模型**（巴菲特、卓肯米勒、伍德、貝瑞等投資哲學、量化公式、圓桌會議機制） | 📈 投資研究者 / 開發者 |
 | 📝 [**CHANGELOG.md**](./CHANGELOG.md) | **版本更新歷程與異動紀錄**（v2.0 架構、2md 搜尋、TypeSafe Jev 整合） | 🛠️ 維護者 / 開發者 |
 | 📑 [**Swagger UI**](https://hedgeapi.afpicapital.com/docs) | **互動式 API 瀏覽器測試平台** | 🌐 瀏覽器線上測試 |
 
@@ -183,7 +183,7 @@ AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose 
 ### 🚀 系統核心亮點與架構
 
 1. 🏛️ **多輪投資圓桌辯論會議 (`POST /api/round_table`)**：
-   - 模擬對沖基金投資委員會，讓 15 位投資大師針對標的多空交鋒（開場破題 ➔ 交叉質疑 ➔ 達成共識決策）。
+   - 模擬對沖基金投資委員會，讓 16 位投資大師針對標的多空交鋒（開場破題 ➔ 交叉質疑 ➔ 達成共識決策）。
    - 產出結構化共識結論（Consensus）、異議觀點（Dissent）、辯論對話逐字稿與投資信念度評分。
 2. 🦅 **新增第 15 位傳奇大師：Stanley Druckenmiller（史丹利·卓肯米勒）**：
    - 專注尋找營收與營業利益率的「二階正向拐點（Rate-of-Change Inflection）」。

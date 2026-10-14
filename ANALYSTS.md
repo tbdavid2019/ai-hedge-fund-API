@@ -27,7 +27,7 @@
 
 ---
 
-## 🌟 15 位投資分析師詳細說明
+## 🌟 16 位投資分析師詳細說明
 
 ### 1. 👴 Warren Buffett (華倫·巴菲特)
 * **Agent 檔案**：[src/agents/warren_buffett.py](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/src/agents/warren_buffett.py)

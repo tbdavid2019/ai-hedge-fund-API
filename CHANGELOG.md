@@ -6,6 +6,20 @@
 
 ## 🚀 未發布
 
+### 💰 [Initial Capital & Docs Audit] 支援自訂初始投資金額參數與全系統 Swagger / Docs / Skill 規格審計
+- **彈性可選初始投資金額 (`initialCash` / `initial_cash`)**：
+  - 新增 `parse_initial_cash()` 強韌解析器，多別名相容 `initialCash`、`initial_cash`、`initialCapital`、`capital`、`cash`。
+  - 支援字串千分位清洗（如 `"1,000,000"`）、浮點數轉型防禦與非正數保護（預設 100,000.0）。
+  - 在同步分析 (`/api/analysis`)、非同步任務 (`/api/analysis/async`) 與回測網格 (`/api/backtest/grid`) 中全面生效，直接連動風控經理（Risk Manager）動態計算部位上限與建議下單股數 (`recommended_shares`)。
+- **Swagger UI 與 OpenAPI 3.0.3 規範完整性提升 (`static/swagger.json`)**：
+  - 補齊非同步任務端點：`POST /api/analysis/async` 與 `GET /api/task/{task_id}`。
+  - 補齊全球標的代碼解析端點：`GET/POST /api/stock/resolve` 與 `GET /api/stock/registry/status`。
+  - 新增 `Stock Tools` 標籤與相對路徑伺服器 URL (`/`)，確保 Swagger UI 在任何網域名稱與連接埠下皆可直接點擊「Try it out」。
+  - 全面校正 15 -> 16 位傳奇分析師體系描述。
+- **全套說明文件與 Skill 指南全面一致化**：
+  - 同步更新 [`skill.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/skill.md)、[`static/skill.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/static/skill.md)、[`README.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/README.md)、[`ANALYSTS.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/ANALYSTS.md)、[`AGENTS.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/AGENTS.md) 與 [`mcp_server.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/mcp_server.py)。
+  - 消除所有歷史遺留的 14/15 位分析師數字不一致，嚴格做到零疏漏。
+
 ### ⚡ [Decision Model] 獨立量化演算法決策模型 Agent 與強韌高可用降級保證 (`src/agents/decision_model.py`)
 - **獨立封裝量化決策模型 (`decision_model`)**：
   - 將 TypeSafe JEV / Clef-Flash SystemOne 快速推理、短線 $T+1 \sim T+3$ 方向多分類機率向量（看漲、平盤、看跌）與 PEAD 盈餘漂移信號正式封裝為第 16 位獨立分析師 Agent（`decision_model`）。

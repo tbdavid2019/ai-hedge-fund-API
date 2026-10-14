@@ -301,7 +301,9 @@ def health_check():
 
 
 @app.route('/docs')
+@app.route('/docs/')
 @app.route('/swagger')
+@app.route('/swagger/')
 def swagger_ui():
     """Swagger UI 文檔頁面"""
     return '''
@@ -336,6 +338,27 @@ def swagger_ui():
 </body>
 </html>
 '''
+
+
+def parse_initial_cash(data: dict, default: float = 100000.0) -> float:
+    """安全解析可選的初始金額參數，相容多種常見命名（initialCash, initial_cash, initialCapital, capital, cash）"""
+    if not isinstance(data, dict):
+        return default
+    raw = (
+        data.get("initialCash")
+        or data.get("initial_cash")
+        or data.get("initialCapital")
+        or data.get("capital")
+        or data.get("cash")
+        or default
+    )
+    try:
+        if isinstance(raw, str):
+            raw = raw.replace(",", "").strip()
+        val = float(raw)
+        return val if val > 0 else default
+    except (ValueError, TypeError):
+        return default
 
 
 # ==========================================
@@ -500,7 +523,7 @@ def run_analysis():
         start_date = data.get('startDate') or (datetime.strptime(end_date, '%Y-%m-%d') - relativedelta(months=3)).strftime('%Y-%m-%d')
 
         # Preserve the legacy initialCash path unless an explicit portfolio is supplied.
-        legacy_initial_cash = data.get('initialCash', 100000)
+        legacy_initial_cash = parse_initial_cash(data, 100000.0)
         if "portfolio" in data:
             if not isinstance(data["portfolio"], dict):
                 raise ValueError("portfolio must be a JSON object")
@@ -635,7 +658,7 @@ def run_backtest_grid_api():
             starting_portfolio, _ = normalize_portfolio_input(
                 data["portfolio"], analysis_cutoff=start_date,
                 resolve_ticker=resolve_ticker,
-                initial_cash=float(data.get("initialCash", 100000)),
+                initial_cash=parse_initial_cash(data, 100000.0),
                 max_age_days=None,
             )
             if starting_portfolio["as_of"] != start_date:
@@ -654,7 +677,7 @@ def run_backtest_grid_api():
             run_id=run_id, tickers=tickers, start_date=start_date, end_date=end_date,
             cutoff_time_utc=str(data.get("cutoffTimeUtc", "16:00:00Z")),
             agent=run_hedge_fund,
-            initial_cash=float(data.get("initialCash", 100000)),
+            initial_cash=parse_initial_cash(data, 100000.0),
             starting_portfolio=starting_portfolio,
             model_name=model_name, model_provider=model_provider,
             selected_analysts=selected_analysts,

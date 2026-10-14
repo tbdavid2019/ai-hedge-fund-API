@@ -62,7 +62,7 @@ Execute deep investment analysis across selected AI investor personas with optio
 | `modelProvider` | string | ❌ | `Groq` | Model provider: `TypeSafe`, `Groq`, `Gemini`, `OpenAI` (`clef-flash` automatically maps to `TypeSafe`) |
 | `enableRoundTable` | boolean | ❌ | `false` | Enable multi-round debate committee after analyst signals |
 | `roundTableRounds` | integer | ❌ | `2` | Number of debate rounds (1 to 3) |
-| `initialCash` | number | ❌ | `100000` | Starting portfolio cash |
+| `initialCash` | number | ❌ | `100000` | Optional starting cash (supports aliases: `initial_cash`, `initialCapital`, `capital`, `cash`). Directly controls risk manager position limits and recommended shares |
 | `portfolio` | object | ❌ | — | Optional dated holdings and cash; its `cash` takes precedence over `initialCash` |
 | `pointInTime` | boolean | ❌ | `false` | Enable strict historical cutoff filtering and return source coverage/exclusions |
 | `startDate` | string | ❌ | 3 months ago | Historical start date (`YYYY-MM-DD`) |
@@ -116,7 +116,34 @@ Example: `{"runId":"trial-1","tickers":["AAPL","2330.TW"],"startDate":"2026-01-0
 
 ---
 
-### 2. 🏛️ Standalone Round Table Debate (`POST /api/round_table`)
+### 2. ⚡ Asynchronous Stock Analysis (`POST /api/analysis/async`) & Task Polling (`GET /api/task/<task_id>`)
+Submit an equity analysis task in the background to avoid HTTP gateway timeouts (recommended for full 16-analyst evaluations or multi-ticker batches).
+
+- **Submit Task**: `POST /api/analysis/async` (Accepts identical payload as `/api/analysis`)
+- **Response (HTTP 202 Accepted)**:
+```json
+{
+  "taskId": "c7a840e6-8575-408f-8898-dbe3234d7d0a",
+  "status": "pending",
+  "message": "AI 分析任務已在背景建立，請透過 /api/task/<taskId> 查詢進度與結果",
+  "pollUrl": "/api/task/c7a840e6-8575-408f-8898-dbe3234d7d0a",
+  "tickers": ["2330.TW"]
+}
+```
+- **Poll Status & Result**: `GET /api/task/<task_id>` (also `/api/analysis/status/<task_id>`)
+  - Status lifecycle: `pending` ➔ `running` ➔ `completed` (or `error`).
+  - Upon `completed`, returns the complete `analyst_signals`, `risk_management_agent`, and `decisions`.
+
+---
+
+### 3. 🔍 Smart Stock Resolver & Registry (`GET /api/stock/resolve`)
+Resolve company names or regional ticker codes into standardized symbols (Taiwan `.TW`, Hong Kong `.HK`, US SPCX, China A-shares) and retrieve official profiles:
+- **Endpoint**: `GET /api/stock/resolve?q=2330` or `POST /api/stock/resolve` with `{"tickers": ["2330", "TSLA", "SPCX", "騰訊"]}`
+- **Global Registry Status**: `GET /api/stock/registry/status` (32,000+ listings cached with SWR updates)
+
+---
+
+### 4. 🏛️ Standalone Round Table Debate (`POST /api/round_table`)
 Run an investment committee debate with pre-computed analyst signals.
 
 - **Endpoint**: `POST /api/round_table`
@@ -156,7 +183,7 @@ Run an investment committee debate with pre-computed analyst signals.
 
 ---
 
-### 3. 💓 Health Check (`GET /api/health`)
+### 5. 💓 Health Check (`GET /api/health`)
 - **Endpoint**: `GET /api/health`
 - **Response**: `{"status": "healthy", "version": "2.0.0", "timestamp": "2026-08-26T07:35:04Z"}`
 
@@ -205,7 +232,7 @@ Run an investment committee debate with pre-computed analyst signals.
 This repository ships with a built-in standard **MCP Server** ([`mcp_server.py`](file:///Users/david/git/tbdavid2019/ai-hedge-fund-API/mcp_server.py)) compatible with **Cursor**, **Claude Desktop**, **Windsurf**, and **Antigravity**.
 
 ### Available MCP Tools:
-1. `analyze_stock_with_committee`: Run full 15-persona hedge fund analysis and round table debate.
+1. `analyze_stock_with_committee`: Run full 16-persona hedge fund analysis and round table debate.
 2. `get_stock_quant_audit`: Instant quantitative audit returning 95%/99% VaR, CVaR, Realized Volatility Regimes, 5×5 DCF Sensitivity Matrix, Altman Z-Score (bankruptcy risk), Piotroski F-Score (0-9 financial health), Amihud Illiquidity Ratio, and ATR Dynamic Trailing Stops.
 
 ### Claude Desktop / Cursor Configuration:
@@ -227,6 +254,6 @@ This repository ships with a built-in standard **MCP Server** ([`mcp_server.py`]
 
 ## 🛡️ JSON Compliance & Strict Parsing Guarantees (RFC 8259)
 
-- **Zero `NaN` / `Infinity` Guarantee**: All numerical metrics across all 15 analysts (e.g. `momentum_6m`, `historical_volatility`, `volatility_z_score`, `z_score`, `atr_ratio`, `dcf_value`, etc.) are strictly sanitized to standard JSON floats or `null`.
+- **Zero `NaN` / `Infinity` Guarantee**: All numerical metrics across all 16 analysts (e.g. `momentum_6m`, `historical_volatility`, `volatility_z_score`, `z_score`, `atr_ratio`, `dcf_value`, etc.) are strictly sanitized to standard JSON floats or `null`.
 - **Node.js & TypeScript 100% Safe**: Never triggers `SyntaxError: Unexpected token 'N' (NaN is not valid JSON)` when executing `JSON.parse()` in Node.js, Next.js API routes (`route.ts`), Python, Go, or browser clients.
 - **Graceful Insufficient Data Handling**: When historical price days are shorter than rolling indicator windows (e.g. calculating 6-month momentum on a 3-month timeframe), indicators automatically use `min_periods=1` and fallback to valid numbers or `null`.

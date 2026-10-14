@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "AI Hedge Fund API",
-    "description": "AI 驅動的頂級投資分析 API，整合 15 位投資大師風格、多輪圓桌辯論會議、即時新聞社群情緒與多模型 LLM 支援。",
+    "description": "AI 驅動的頂級投資分析 API，整合 16 位投資大師風格、多輪圓桌辯論會議、即時新聞社群情緒與多模型 LLM 支援。",
     "version": "2.0.0",
     "contact": {
       "name": "AI Hedge Fund API",
@@ -15,11 +15,100 @@
       "description": "生產環境 HTTPS 伺服器 (Production HTTPS Server)"
     },
     {
+      "url": "/",
+      "description": "當前瀏覽器相對路徑 (Current Origin Server)"
+    },
+    {
       "url": "http://localhost:6000",
       "description": "本地開發伺服器 (Local Development Server)"
     }
   ],
   "paths": {
+    "/api/analysis/async": {
+      "post": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "非同步建立股票分析任務",
+        "description": "建立非同步股票分析任務，立即回傳 taskId 與 pollUrl，避免 HTTP 閘道器逾時。可透過 GET /api/task/{taskId} 輪詢執行進度與最終決策。",
+        "operationId": "runAnalysisAsync",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "任務建立成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncTaskCreatedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "請求格式錯誤",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/task/{task_id}": {
+      "get": {
+        "tags": [
+          "Analysis"
+        ],
+        "summary": "查詢非同步任務狀態與結果",
+        "description": "依據 taskId 查詢背景分析任務的執行狀態（pending、running、completed、error）及產出的投資分析訊號與委員會共識決策。",
+        "operationId": "getTaskStatus",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "description": "非同步任務唯一識別碼 (UUID)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查詢成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncTaskStatusResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "任務不存在或已過期",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/analysis": {
       "post": {
         "tags": [
@@ -272,6 +361,83 @@
           }
         }
       }
+    },
+    "/api/stock/resolve": {
+      "get": {
+        "tags": [
+          "Stock Tools"
+        ],
+        "summary": "智慧解析單一股票代號與公司檔案",
+        "description": "智慧解析股票代號（例如台股 2330 -> 2330.TW、美股 SPCX、港股 700 -> 0700.HK）與官方中英文檔案。",
+        "operationId": "resolveStockGet",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "股票代碼或公司名稱 (如 2330, TSLA, 騰訊, SPCX)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "解析成功"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Stock Tools"
+        ],
+        "summary": "批次或單筆解析股票代號",
+        "description": "傳入多筆股票代號或查詢字串陣列進行批次解析標準化代號。",
+        "operationId": "resolveStockPost",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tickers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "2330",
+                      "TSLA",
+                      "SPCX",
+                      "700"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "解析成功"
+          }
+        }
+      }
+    },
+    "/api/stock/registry/status": {
+      "get": {
+        "tags": [
+          "Stock Tools"
+        ],
+        "summary": "查詢全球股票清冊快取與 SWR 更新狀態",
+        "description": "查詢包含台、美、港、陸、日、歐、英全球 32,000+ 檔標的之離線快取狀態與非同步背景更新進度。",
+        "operationId": "getRegistryStatus",
+        "responses": {
+          "200": {
+            "description": "查詢成功"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -338,7 +504,7 @@
           },
           "initialCash": {
             "type": "number",
-            "description": "初始資金（預設：100000）",
+            "description": "可選初始投資金額（預設 100000.0），亦相容 initial_cash, initialCapital, capital, cash 別名。此金額直接用於風控模型（Risk Manager）計算部位上限與建議下單股數 (recommended_shares)。",
             "default": 100000,
             "example": 100000
           },
@@ -560,6 +726,69 @@
             "default": 0.5
           }
         }
+      },
+      "AsyncTaskCreatedResponse": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "example": "c7a840e6-8575-408f-8898-dbe3234d7d0a"
+          },
+          "status": {
+            "type": "string",
+            "example": "pending"
+          },
+          "message": {
+            "type": "string",
+            "example": "AI 分析任務已在背景建立，請透過 /api/task/<taskId> 查詢進度與結果"
+          },
+          "pollUrl": {
+            "type": "string",
+            "example": "/api/task/c7a840e6-8575-408f-8898-dbe3234d7d0a"
+          },
+          "tickers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "2330.TW"
+            ]
+          }
+        }
+      },
+      "AsyncTaskStatusResponse": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "running",
+              "completed",
+              "error"
+            ]
+          },
+          "progress": {
+            "type": "string"
+          },
+          "tickers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "result": {
+            "$ref": "#/components/schemas/AnalysisResponse"
+          },
+          "error": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       }
     }
   },
@@ -571,6 +800,10 @@
     {
       "name": "Round Table",
       "description": "多輪圓桌會議辯論 API"
+    },
+    {
+      "name": "Stock Tools",
+      "description": "全球股票代碼解析與清冊管理"
     },
     {
       "name": "Health",
