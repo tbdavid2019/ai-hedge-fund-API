@@ -504,7 +504,8 @@
           },
           "initialCash": {
             "type": "number",
-            "description": "可選初始投資金額（預設 100000.0），亦相容 initial_cash, initialCapital, capital, cash 別名。此金額直接用於風控模型（Risk Manager）計算部位上限與建議下單股數 (recommended_shares)。",
+            "minimum": 100,
+            "description": "可選初始投資金額（預設 100000.0，最低門檻 100.0），亦相容 initial_cash, initialCapital, capital, cash 別名。數值必須為大於等於 100 的有限正數（負數、零或過小數值將回傳 HTTP 400）。此金額直接用於風控模型（Risk Manager）計算部位上限與建議下單股數 (recommended_shares)。",
             "default": 100000,
             "example": 100000
           },

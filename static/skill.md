@@ -62,7 +62,7 @@ Execute deep investment analysis across selected AI investor personas with optio
 | `modelProvider` | string | ❌ | `Groq` | Model provider: `TypeSafe`, `Groq`, `Gemini`, `OpenAI` (`clef-flash` automatically maps to `TypeSafe`) |
 | `enableRoundTable` | boolean | ❌ | `false` | Enable multi-round debate committee after analyst signals |
 | `roundTableRounds` | integer | ❌ | `2` | Number of debate rounds (1 to 3) |
-| `initialCash` | number | ❌ | `100000` | Optional starting cash (supports aliases: `initial_cash`, `initialCapital`, `capital`, `cash`). Directly controls risk manager position limits and recommended shares |
+| `initialCash` | number | ❌ | `100000` | Optional starting cash (min 100.0, default 100,000.0, supports aliases: `initial_cash`, `initialCapital`, `capital`, `cash`). Rejects negative, zero, or < 100.0 values with HTTP 400. Directly controls risk manager position limits and recommended shares |
 | `portfolio` | object | ❌ | — | Optional dated holdings and cash; its `cash` takes precedence over `initialCash` |
 | `pointInTime` | boolean | ❌ | `false` | Enable strict historical cutoff filtering and return source coverage/exclusions |
 | `startDate` | string | ❌ | 3 months ago | Historical start date (`YYYY-MM-DD`) |

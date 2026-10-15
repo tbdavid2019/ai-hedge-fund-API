@@ -340,25 +340,69 @@ def swagger_ui():
 '''
 
 
+MIN_INITIAL_CASH = 100.0
+MAX_INITIAL_CASH = 1_000_000_000_000.0  # 1 Trillion
+
+
 def parse_initial_cash(data: dict, default: float = 100000.0) -> float:
-    """安全解析可選的初始金額參數，相容多種常見命名（initialCash, initial_cash, initialCapital, capital, cash）"""
+    """
+    解析可選的初始金額參數，相容多種常見命名（initialCash, initial_cash, initialCapital, capital, cash）。
+    
+    嚴格防禦不合理數值（擋下負數、零、過小與非數值）：
+    - 若完全未提供任何初始金額參數，回傳 default (預設 100,000.0)。
+    - 若傳入值為空、非數字、NaN、或 Infinity，拋出 ValueError (回傳 HTTP 400)。
+    - 若傳入負數或零 (<= 0)，拋出 ValueError (回傳 HTTP 400)。
+    - 若傳入數值過小 (< 100.0)，拋出 ValueError (回傳 HTTP 400)。
+    - 若傳入數值超出合理上限 (> 1,000,000,000,000.0)，拋出 ValueError (回傳 HTTP 400)。
+    """
     if not isinstance(data, dict):
         return default
-    raw = (
-        data.get("initialCash")
-        or data.get("initial_cash")
-        or data.get("initialCapital")
-        or data.get("capital")
-        or data.get("cash")
-        or default
-    )
-    try:
-        if isinstance(raw, str):
-            raw = raw.replace(",", "").strip()
-        val = float(raw)
-        return val if val > 0 else default
-    except (ValueError, TypeError):
+
+    # 檢查是否顯式提供了初始金額鍵名
+    cash_keys = ("initialCash", "initial_cash", "initialCapital", "capital", "cash")
+    provided_key = None
+    raw_val = None
+    for k in cash_keys:
+        if k in data and data[k] is not None:
+            provided_key = k
+            raw_val = data[k]
+            break
+
+    # 若完全未提供，回傳預設值
+    if provided_key is None or raw_val == "":
         return default
+
+    # 嘗試清洗與轉型為浮點數
+    try:
+        if isinstance(raw_val, str):
+            cleaned_str = raw_val.replace(",", "").strip()
+            if not cleaned_str:
+                return default
+            val = float(cleaned_str)
+        elif isinstance(raw_val, (int, float)):
+            val = float(raw_val)
+        else:
+            raise ValueError(f"{provided_key} 必須為數值型態")
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f"{provided_key} 必須為有效的數字 (收到: {raw_val!r})") from exc
+
+    # 檢查是否為有限數值 (阻擋 NaN / Infinity)
+    if not math.isfinite(val):
+        raise ValueError(f"{provided_key} 必須為有限數值，不可為 NaN 或 Infinity")
+
+    # 阻擋負數與零
+    if val <= 0:
+        raise ValueError(f"{provided_key} 不得為負數或零，必須大於 0 (收到: {val})")
+
+    # 阻擋過小金額 (最低投資門檻 100.0)
+    if val < MIN_INITIAL_CASH:
+        raise ValueError(f"{provided_key} 數值過小，最低初始投資金額門檻為 {MIN_INITIAL_CASH:,.0f} (收到: {val})")
+
+    # 阻擋超出極限金額
+    if val > MAX_INITIAL_CASH:
+        raise ValueError(f"{provided_key} 超出合理資金上限，最大初始投資金額為 {MAX_INITIAL_CASH:,.0f} (收到: {val})")
+
+    return val
 
 
 # ==========================================

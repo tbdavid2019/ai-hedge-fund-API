@@ -169,5 +169,56 @@ class TestQuantModule(unittest.TestCase):
         self.assertIn("probabilities", sig)
 
 
+    def test_parse_initial_cash_valid(self):
+        from webui2 import parse_initial_cash
+        # Default when omitted
+        self.assertEqual(parse_initial_cash({}), 100000.0)
+        self.assertEqual(parse_initial_cash({"initialCash": None}), 100000.0)
+        self.assertEqual(parse_initial_cash({"initial_cash": ""}), 100000.0)
+        
+        # Valid numbers & aliases
+        self.assertEqual(parse_initial_cash({"initialCash": 50000}), 50000.0)
+        self.assertEqual(parse_initial_cash({"initial_cash": "200,000"}), 200000.0)
+        self.assertEqual(parse_initial_cash({"initialCapital": "1,000,000.5"}), 1000000.5)
+        self.assertEqual(parse_initial_cash({"capital": 100.0}), 100.0)
+        self.assertEqual(parse_initial_cash({"cash": 500}), 500.0)
+
+    def test_parse_initial_cash_invalid_blocked(self):
+        from webui2 import parse_initial_cash
+        # Negative numbers must be rejected
+        with self.assertRaises(ValueError) as ctx:
+            parse_initial_cash({"initialCash": -500})
+        self.assertIn("不得為負數或零", str(ctx.exception))
+
+        # Zero must be rejected
+        with self.assertRaises(ValueError) as ctx:
+            parse_initial_cash({"initial_cash": 0})
+        self.assertIn("不得為負數或零", str(ctx.exception))
+
+        # Too small (< 100.0) must be rejected
+        with self.assertRaises(ValueError) as ctx:
+            parse_initial_cash({"initialCash": 50})
+        self.assertIn("數值過小", str(ctx.exception))
+
+        with self.assertRaises(ValueError) as ctx:
+            parse_initial_cash({"capital": 99.99})
+        self.assertIn("數值過小", str(ctx.exception))
+
+        # Non-numeric string must be rejected
+        with self.assertRaises(ValueError) as ctx:
+            parse_initial_cash({"cash": "abc"})
+        self.assertIn("必須為有效的數字", str(ctx.exception))
+
+        # NaN / Infinity must be rejected
+        with self.assertRaises(ValueError) as ctx:
+            parse_initial_cash({"initialCash": float("nan")})
+        self.assertIn("必須為有限數值", str(ctx.exception))
+
+        # Exceeding trillion limit must be rejected
+        with self.assertRaises(ValueError) as ctx:
+            parse_initial_cash({"initialCash": 1e15})
+        self.assertIn("超出合理資金上限", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

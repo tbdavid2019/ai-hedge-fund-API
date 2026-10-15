@@ -6,11 +6,17 @@
 
 ## 🚀 未發布
 
-### 💰 [Initial Capital & Docs Audit] 支援自訂初始投資金額參數與全系統 Swagger / Docs / Skill 規格審計
+### 💰 [Initial Capital & Strict Validation] 支援自訂初始投資金額參數與嚴格防禦校驗（阻擋負數、零與過小值）
 - **彈性可選初始投資金額 (`initialCash` / `initial_cash`)**：
   - 新增 `parse_initial_cash()` 強韌解析器，多別名相容 `initialCash`、`initial_cash`、`initialCapital`、`capital`、`cash`。
-  - 支援字串千分位清洗（如 `"1,000,000"`）、浮點數轉型防禦與非正數保護（預設 100,000.0）。
+  - **嚴格防禦校驗（HTTP 400 阻擋）**：
+    - 若傳入負數或零（`<= 0`），明確報錯回傳 HTTP 400（例如 `initialCash 不得為負數或零，必須大於 0`）。
+    - 若傳入過小金額（`< 100.0`），明確報錯回傳 HTTP 400（最低投資門檻 `100.0`）。
+    - 若傳入非數值字串、`NaN` 或 `Infinity`，明確報錯回傳 HTTP 400。
+    - 若傳入數值超出兆級上限（`> 1e12`），明確報錯回傳 HTTP 400。
+    - 若未傳入，安全使用標準預設值 `100,000.0`。
   - 在同步分析 (`/api/analysis`)、非同步任務 (`/api/analysis/async`) 與回測網格 (`/api/backtest/grid`) 中全面生效，直接連動風控經理（Risk Manager）動態計算部位上限與建議下單股數 (`recommended_shares`)。
+  - 在 [`tests/test_quant.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/tests/test_quant.py) 中補齊有效性與非法值阻擋之完整單元測試。
 - **Swagger UI 與 OpenAPI 3.0.3 規範完整性提升 (`static/swagger.json`)**：
   - 補齊非同步任務端點：`POST /api/analysis/async` 與 `GET /api/task/{task_id}`。
   - 補齊全球標的代碼解析端點：`GET/POST /api/stock/resolve` 與 `GET /api/stock/registry/status`。
