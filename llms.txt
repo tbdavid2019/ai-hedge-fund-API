@@ -1,0 +1,26 @@
+# AI Hedge Fund API
+
+> Production-grade Multi-Agent Quantitative Equity Research and Investment Committee Debate System.
+> Continuous feature evolution is active—always fetch the latest live spec before execution.
+
+This API provides institutional-grade equity analysis across 16 legendary investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation, Druckenmiller, Jev Decision Model), multi-round round table committee debates, real-time 2md news search, and CVaR dynamic risk management.
+
+## Always Fetch Live Spec
+- [Latest Agent Skill Guide](https://hedgeapi.afpicapital.com/skill.md): Authoritative LLM agent skill specification with live endpoint schemas, 16 analyst keys, and parameter validation. Always fetch live before execution.
+- [Full Text Specification](https://hedgeapi.afpicapital.com/llms-full.txt): Complete uncompressed system documentation and parameter references.
+- [OpenAPI Specification](https://hedgeapi.afpicapital.com/static/swagger.json): OpenAPI 3.0.3 machine-readable schema.
+- [Interactive Swagger UI](https://hedgeapi.afpicapital.com/docs): Interactive browser documentation and testing console.
+- [Health Check](https://hedgeapi.afpicapital.com/api/health): Live server status, version, and UTC timestamp.
+
+## Core Endpoints
+- `POST https://hedgeapi.afpicapital.com/api/analysis`: Synchronous equity analysis with optional round table debate and dynamic position sizing.
+- `POST https://hedgeapi.afpicapital.com/api/analysis/async`: Asynchronous equity analysis (returns `taskId` and `pollUrl`).
+- `GET https://hedgeapi.afpicapital.com/api/task/{task_id}`: Poll status (`pending`, `running`, `completed`, `error`) and retrieve analysis results.
+- `POST https://hedgeapi.afpicapital.com/api/round_table`: Standalone multi-round committee debate with pre-computed signals.
+- `GET https://hedgeapi.afpicapital.com/api/stock/resolve`: Smart ticker resolver supporting US, Taiwan (`.TW`), Hong Kong (`.HK`), and global equities.
+- `GET https://hedgeapi.afpicapital.com/api/stock/registry/status`: Global stock registry status (~32,000+ listings).
+- `POST https://hedgeapi.afpicapital.com/api/backtest/grid`: Resumable Point-in-Time (PIT) backtest grid.
+
+## Key Parameter Constraints
+- `initialCash`: Optional starting cash (default: 100,000.0, minimum: 100.0). Rejects negative, zero, or < 100.0 values with HTTP 400. Supports aliases `initial_cash`, `initialCapital`, `capital`, `cash`.
+- `selectedAnalysts`: Array of analyst keys from the 16-persona registry. Empty array selects all 16 analysts. Unknown keys return HTTP 400.

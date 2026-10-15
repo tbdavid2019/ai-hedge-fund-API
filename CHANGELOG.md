@@ -6,7 +6,15 @@
 
 ## 🚀 未發布
 
-### 💰 [Initial Capital & Strict Validation] 支援自訂初始投資金額參數與嚴格防禦校驗（阻擋負數、零與過小值）
+### 🌐 [LLMs.txt & Live Spec Policy] 上線標準 `llms.txt` / `llms-full.txt` 索引與強制即時拉取最新規格提醒
+- **新增標準 `llms.txt` 與 `llms-full.txt` 規範端點 ([`llms.txt`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/llms.txt))**：
+  - 遵循 [llmstxt.org](https://llmstxt.org) 全球標準，提供專供大型語言模型與 AI 爬蟲檢索之結構化 Markdown 索引地圖。
+  - 在 [`webui2.py`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/webui2.py) 中原生提供 `/llms.txt` 與 `/llms-full.txt` 路由，並自動依據客戶端請求標頭動態偵測替換為對外正式 Base URL。
+- **強烈註明「隨時拉取最新版本」警示（Live Spec Policy）**：
+  - 在 [`skill.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/skill.md) 的 YAML Frontmatter `description` 與內文頂部顯著位置加入標準警示塊（GitHub Alert `[!IMPORTANT]`）。
+  - 明確提醒所有呼叫端 LLM Agent（Claude、Cursor、Devin、ChatGPT、Antigravity 等）：**本避險基金系統功能持續快速升級，執行任何分析或回測前，一律必須即時拉取最新 live 版本，嚴禁依賴過期或硬編碼之舊配置**。
+- **文檔導覽全面補齊**：
+  - 在 [`README.md`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/README.md) 中英文文檔矩陣中納入 `llms.txt`。
 - **彈性可選初始投資金額 (`initialCash` / `initial_cash`)**：
   - 新增 `parse_initial_cash()` 強韌解析器，多別名相容 `initialCash`、`initial_cash`、`initialCapital`、`capital`、`cash`。
   - **嚴格防禦校驗（HTTP 400 阻擋）**：

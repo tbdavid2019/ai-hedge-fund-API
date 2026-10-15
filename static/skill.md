@@ -1,13 +1,20 @@
 ---
 name: ai-hedge-fund
-description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Provides full-stack equity research from 16 legend investor personas (Buffett, Munger, Wood, Burry, Lynch, Ackman, Graham, Fisher, Pelosi, WSB, Technicals, Fundamentals, Sentiment, Valuation, Druckenmiller, Jev Decision Model) and multi-round round table debates with dynamic portfolio allocation.
+description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate API. Continuous feature evolution is active—always fetch the latest live spec at https://hedgeapi.afpicapital.com/skill.md before execution. Provides full-stack equity research from 16 legend investor personas and multi-round round table debates with dynamic portfolio allocation.
 ---
 
 # 🤖 AI Hedge Fund API - Agent Skill Guide
 
+> [!IMPORTANT]
+> **Continuous Feature Evolution & Live Spec Policy (即時版本同步提醒)**:
+> This system undergoes active, continuous evolution. AI Agents, LLMs, and automated clients **MUST ALWAYS fetch the latest live version directly from `https://hedgeapi.afpicapital.com/skill.md` (or `https://hedgeapi.afpicapital.com/llms.txt`) before executing any analysis, backtest, or debate**. Never rely on stale cached schemas or hardcoded analyst rosters.
+
 This document is designed for AI Agents and LLMs to understand and interact with the **AI Hedge Fund API**.
 
 - **Server Base URL**: `https://hedgeapi.afpicapital.com`
+- **Latest Live Skill Guide**: `https://hedgeapi.afpicapital.com/skill.md`
+- **LLMs Discovery Index**: `https://hedgeapi.afpicapital.com/llms.txt`
+- **Full Text Specification**: `https://hedgeapi.afpicapital.com/llms-full.txt`
 - **API Documentation**: `https://hedgeapi.afpicapital.com/docs`
 - **Health Check**: `https://hedgeapi.afpicapital.com/api/health`
 - **Swagger JSON**: `https://hedgeapi.afpicapital.com/static/swagger.json`

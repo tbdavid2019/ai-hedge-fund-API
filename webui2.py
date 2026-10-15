@@ -290,6 +290,33 @@ def serve_skill_md():
     return Response("# AI Hedge Fund API\n\nPlease visit /docs for Swagger UI documentation.", mimetype="text/plain; charset=utf-8")
 
 
+@app.route('/llms.txt')
+def serve_llms_txt():
+    """提供標準 llms.txt 規範檔案，指引 LLM Agents 取得最新即時規格與端點地圖"""
+    scheme = request.headers.get('X-Forwarded-Proto', request.scheme or 'http')
+    host = request.headers.get('X-Forwarded-Host', request.host)
+    base_url = f"{scheme}://{host}".rstrip('/') if host else "https://hedgeapi.afpicapital.com"
+
+    llms_path = os.path.join(os.path.dirname(__file__), "static", "llms.txt")
+    if not os.path.exists(llms_path):
+        llms_path = os.path.join(os.path.dirname(__file__), "llms.txt")
+
+    if os.path.exists(llms_path):
+        with open(llms_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        import re
+        content = re.sub(r'https://hedgeapi\.afpicapital\.com', base_url, content)
+        return Response(content, mimetype="text/markdown; charset=utf-8")
+
+    return Response(f"# AI Hedge Fund API\n\nPlease visit {base_url}/skill.md for live skill specifications.", mimetype="text/markdown; charset=utf-8")
+
+
+@app.route('/llms-full.txt')
+def serve_llms_full_txt():
+    """提供完整的 llms-full.txt，重用即時 Base URL 的完整 skill.md 規格"""
+    return serve_skill_md()
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """健康檢查端點"""

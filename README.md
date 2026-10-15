@@ -29,6 +29,7 @@ An institutional-grade, multi-agent financial quantitative research and investme
 | Document | Purpose | Target Audience |
 |:---|:---|:---|
 | 📄 [**skill.md**](./skill.md) | **API Calling Specification & Endpoint Schema** (minimal JSON payloads, 16 analyst keys, TypeSafe/Groq models) | 🤖 AI Agents & LLMs |
+| 🤖 [**llms.txt**](https://hedgeapi.afpicapital.com/llms.txt) | **LLM Discovery Index & Live Spec Map** (conforming to llmstxt.org standard) | 🤖 AI Crawlers & Agents |
 | 🛠️ [**AGENTS.md**](./AGENTS.md) | **Codebase Architecture & AI Developer Guide** (LangGraph state machine, module responsibilities, failover, agent creation) | 🤖 AI Coding Agents |
 | 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **16 Investment Analyst & Quantitative Models** (Investment philosophies, financial formulas, debate mechanics) | 📈 Quants & Researchers |
 | 📝 [**CHANGELOG.md**](./CHANGELOG.md) | **Version History & Release Notes** (v2.0 architecture, 2md search, TypeSafe integration) | 🛠️ Developers |
@@ -173,6 +174,7 @@ AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose 
 | 文件 | 核心內容說明 | 適用對象 |
 |:---|:---|:---|
 | 📄 [**skill.md**](./skill.md) | **API 調用標準規範與端點 Schema**（最簡 POST 範例、JSON 格式、16 位分析師 key、TypeSafe/Groq 模型規格） | 🤖 AI Agents & LLMs（API 呼叫端） |
+| 🤖 [**llms.txt**](https://hedgeapi.afpicapital.com/llms.txt) | **LLM 索引導覽與即時規格地圖**（符合 llmstxt.org 標準） | 🤖 AI 爬蟲與 Agent 呼叫端 |
 | 🛠️ [**AGENTS.md**](./AGENTS.md) | **代碼庫架構與 AI 開發者指南**（LangGraph 狀態機、模組職責、LLM Fallback 容災降級、新增 Agent 規範） | 🤖 AI Coding Agents（代碼維護） |
 | 📊 [**ANALYSTS.md**](./ANALYSTS.md) | **16 位傳奇投資分析師量化模型**（巴菲特、卓肯米勒、伍德、貝瑞等投資哲學、量化公式、圓桌會議機制） | 📈 投資研究者 / 開發者 |
 | 📝 [**CHANGELOG.md**](./CHANGELOG.md) | **版本更新歷程與異動紀錄**（v2.0 架構、2md 搜尋、TypeSafe Jev 整合） | 🛠️ 維護者 / 開發者 |
