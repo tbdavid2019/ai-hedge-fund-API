@@ -15,6 +15,7 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 > 🌐 **Official Public HTTPS API**: [https://hedgeapi.afpicapital.com](https://hedgeapi.afpicapital.com)  
 > 📑 **Interactive Swagger UI**: [https://hedgeapi.afpicapital.com/docs](https://hedgeapi.afpicapital.com/docs)  
 > 📄 **LLM Agent Skill Spec**: [https://hedgeapi.afpicapital.com/skill.md](https://hedgeapi.afpicapital.com/skill.md)  
+> 🤖 **LLMs Discovery Index**: [https://hedgeapi.afpicapital.com/llms.txt](https://hedgeapi.afpicapital.com/llms.txt)  
 > 📊 **OpenAPI 3.0.3 Specification**: [https://hedgeapi.afpicapital.com/static/swagger.json](https://hedgeapi.afpicapital.com/static/swagger.json)  
 > 💓 **Live Health Check**: `GET https://hedgeapi.afpicapital.com/api/health`
 
@@ -23,6 +24,10 @@ description: AI Hedge Fund Investment Analysis and Multi-Round Committee Debate 
 ## 🇺🇸 English Documentation
 
 An institutional-grade, multi-agent financial quantitative research and investment committee system. Built on **LangGraph** and **Python 3.13**, it orchestrates 16 specialized investment personas, simulates a multi-round round table committee debate, leverages point-in-time quantitative risk controls, and delivers risk-adjusted portfolio allocation decisions.
+
+> [!IMPORTANT]
+> **Continuous Feature Evolution & Live Spec Policy**:
+> This system is actively evolving. AI Agents, LLMs, and automated clients **MUST ALWAYS fetch the latest live specifications directly from [https://hedgeapi.afpicapital.com/skill.md](https://hedgeapi.afpicapital.com/skill.md) or [https://hedgeapi.afpicapital.com/llms.txt](https://hedgeapi.afpicapital.com/llms.txt) before initiating requests**, rather than relying on stale cached schemas or hardcoded parameters.
 
 ### 🧭 Documentation Map
 
@@ -80,7 +85,8 @@ curl -X POST "https://hedgeapi.afpicapital.com/api/analysis" \
        "selectedAnalysts": ["stanley_druckenmiller", "warren_buffett", "technical_analyst"],
        "enableRoundTable": true,
        "roundTableRounds": 1,
-       "modelName": "clef-flash"
+       "modelName": "clef-flash",
+       "initialCash": 100000
      }'
 ```
 
@@ -169,6 +175,10 @@ AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose 
 
 `ai-hedge-fund-API` 是一套企業級、多智慧體（Multi-Agent）金融量化研調與投資決策委員會系統。全系統基於 **LangGraph** 與 **Python 3.13** 開發，模擬現代對沖基金頂級投研流程：由 16 位各具鮮明投資哲學的傳奇大師代理人並行研調，透過**多輪圓桌會議（Round Table Debate）**展開多空辯論攻防，最終整合嚴格的量化風控模型（CVaR、波動率制度）輸出標準化資產配置訂單。
 
+> [!IMPORTANT]
+> **系統持續演進與即時規格同步政策 (Live Spec Policy)**：
+> 本避險基金系統功能持續快速升級。呼叫本 API 的 AI Agent、大型語言模型與自動化客戶端，**請務必在發起任何分析或回測前，直接從 [https://hedgeapi.afpicapital.com/skill.md](https://hedgeapi.afpicapital.com/skill.md) 或 [https://hedgeapi.afpicapital.com/llms.txt](https://hedgeapi.afpicapital.com/llms.txt) 獲取最新即時規格**，避免使用本地過期快取或寫死分析師名單。
+
 ### 🧭 核心文件導覽
 
 | 文件 | 核心內容說明 | 適用對象 |
@@ -224,7 +234,8 @@ curl -X POST "https://hedgeapi.afpicapital.com/api/analysis" \
        "selectedAnalysts": ["stanley_druckenmiller", "warren_buffett", "technical_analyst"],
        "enableRoundTable": true,
        "roundTableRounds": 1,
-       "modelName": "clef-flash"
+       "modelName": "clef-flash",
+       "initialCash": 100000
      }'
 ```
 
