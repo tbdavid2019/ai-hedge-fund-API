@@ -46,12 +46,15 @@ def call_llm(
     pydantic_model: Type[T] = None,
     agent_name: Optional[str] = None,
     max_retries: int = 2,
-    default_factory = None
+    default_factory = None,
+    result_metadata: Optional[dict] = None,
 ) -> T:
     """
     Makes an LLM call with retry logic, bilingual instruction injection, and automatic fallback to ChatGPT (gpt-4o).
     """
     from llm.models import get_model, get_model_info, get_fallback_model
+    if result_metadata is not None:
+        result_metadata.clear()
     
     # Inject bilingual English & Traditional Chinese instruction
     prompt = inject_bilingual_instruction(prompt)
@@ -60,6 +63,11 @@ def call_llm(
     model_name = model_name or os.getenv("DEFAULT_MODEL", "openai/gpt-oss-20b")
     model_provider = model_provider or os.getenv("DEFAULT_MODEL_PROVIDER", "Groq")
     model_info = get_model_info(model_name)
+
+    def completed(value, name, provider):
+        if result_metadata is not None and name and provider:
+            result_metadata.update(model_name=name, model_provider=str(getattr(provider, "value", provider)))
+        return value
 
     try:
         llm = get_model(model_name, model_provider)
@@ -80,17 +88,18 @@ def call_llm(
                 
                 # If structured output already parsed it into Pydantic model
                 if isinstance(result, pydantic_model):
-                    return result
+                    return completed(result, model_name, model_provider)
                 
                 # Extract and parse JSON
                 content = getattr(result, "content", str(result))
                 parsed = extract_json_from_response(content)
                 if parsed:
-                    return pydantic_model(**parsed)
+                    return completed(pydantic_model(**parsed), model_name, model_provider)
                     
             except Exception as e:
                 if attempt == max_retries - 1:
                     raise e
+        raise ValueError("Primary LLM did not return a valid structured response")
                     
     except Exception as primary_err:
         fallback_model_name = os.getenv("FALLBACK_MODEL", "models/gemini-flash-latest")
@@ -101,6 +110,11 @@ def call_llm(
         # 2. Seamless Fallback
         try:
             fallback_llm = get_fallback_model(fallback_model_name)
+            # The fallback transport is OpenAI-compatible; identify Gemini only
+            # for its configured official endpoint, otherwise name the gateway.
+            from urllib.parse import urlparse
+            fallback_host = urlparse(os.getenv("FALLBACK_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")).hostname
+            fallback_provider = "Gemini" if fallback_host == "generativelanguage.googleapis.com" else fallback_host
             try:
                 fallback_structured = fallback_llm.with_structured_output(
                     pydantic_model,
@@ -108,7 +122,7 @@ def call_llm(
                 )
                 result = fallback_structured.invoke(prompt)
                 if isinstance(result, pydantic_model):
-                    return result
+                    return completed(result, fallback_model_name, fallback_provider)
             except Exception:
                 pass
 
@@ -116,7 +130,7 @@ def call_llm(
             content = getattr(result, "content", str(result))
             parsed = extract_json_from_response(content)
             if parsed:
-                return pydantic_model(**parsed)
+                return completed(pydantic_model(**parsed), fallback_model_name, fallback_provider)
 
         except Exception as fallback_err:
             print(f"[LLM Error] Fallback ({fallback_model_name}) also failed: {fallback_err}")

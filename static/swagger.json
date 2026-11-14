@@ -593,6 +593,14 @@
             "type": "string",
             "format": "date",
             "description": "分析結束日期（YYYY-MM-DD）"
+          },
+          "forecastChallenge": {
+            "$ref": "#/components/schemas/HeadlineChallenge"
+          },
+          "marketContext": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Challenge-bound, prediction-ready context with contract_identity.symbol, confirmed baseline.price/status, and matching undelayed quote.price/as_of/contract_symbol. Quote maximum age: 15 minutes. Required with forecastChallenge."
           }
         }
       },
@@ -638,6 +646,9 @@
           "round_table": {
             "type": "object",
             "description": "多輪圓桌會議辯論與共識結論"
+          },
+          "forecast": {
+            "$ref": "#/components/schemas/HeadlineForecast"
           }
         }
       },
@@ -788,6 +799,170 @@
           "error": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "HeadlineChallenge": {
+        "type": "object",
+        "description": "Optional synchronous-only ES/GC committee pilot. Requires the pilot ticker, selectedAnalysts=[technical_analyst,sentiment_analyst] and enableRoundTable=true. Legacy requests are unchanged. Unsupported schemas or missing evidence are rejected.",
+        "required": [
+          "id",
+          "asset",
+          "question",
+          "status",
+          "challenge_type",
+          "deadline",
+          "resolve_at",
+          "open_price",
+          "open_price_confirmed",
+          "baseline_status",
+          "contract_symbol",
+          "dead_zone_pct",
+          "resolution_criteria"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "asset": {
+            "type": "string",
+            "enum": [
+              "ES",
+              "GC"
+            ]
+          },
+          "question": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open"
+            ]
+          },
+          "challenge_type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "btc_session",
+              "flash"
+            ]
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolve_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "open_price": {
+            "type": "number",
+            "exclusiveMinimum": true,
+            "minimum": 0
+          },
+          "open_price_confirmed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "baseline_status": {
+            "type": "string",
+            "enum": [
+              "confirmed"
+            ]
+          },
+          "contract_symbol": {
+            "type": "string"
+          },
+          "dead_zone_pct": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Frozen threshold in percentage points; exact boundary is neutral."
+          },
+          "resolution_criteria": {
+            "type": "string"
+          },
+          "prediction_schema": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "If supplied, must explicitly support bearish/neutral/bullish categories and a supported probability/direction encoding. Unknown shapes are skipped."
+          }
+        }
+      },
+      "HeadlineForecast": {
+        "type": "object",
+        "required": [
+          "challenge_id",
+          "probabilities",
+          "reasoning",
+          "prompt_hash",
+          "prompt_version",
+          "model_attribution",
+          "selectedAnalysts",
+          "evidence"
+        ],
+        "properties": {
+          "challenge_id": {
+            "type": "string"
+          },
+          "probabilities": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "bearish",
+              "neutral",
+              "bullish"
+            ],
+            "description": "Finite values in [0,1], total 1 within 1e-6.",
+            "properties": {
+              "bearish": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "neutral": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "bullish": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          },
+          "reasoning": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 4000,
+            "description": "English and Traditional Chinese rationale, without truncation."
+          },
+          "prompt_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "prompt_version": {
+            "type": "string"
+          },
+          "model_attribution": {
+            "type": "object",
+            "description": "Actual synthesis model gateway and name, including failover. Not attribution for every analyst call.",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "selectedAnalysts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": true
           }
         }
       }

@@ -96,6 +96,7 @@ def sentiment_agent(state: AgentState):
             "signal": overall_signal,
             "confidence": confidence,
             "reasoning": reasoning,
+            "data_coverage": {"news_count": len(news_signals), "insider_count": len(insider_signals)},
         }
 
         progress.update_status("sentiment_agent", ticker, "Done")

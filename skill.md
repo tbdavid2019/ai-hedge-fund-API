@@ -264,3 +264,52 @@ This repository ships with a built-in standard **MCP Server** ([`mcp_server.py`]
 - **Zero `NaN` / `Infinity` Guarantee**: All numerical metrics across all 16 analysts (e.g. `momentum_6m`, `historical_volatility`, `volatility_z_score`, `z_score`, `atr_ratio`, `dcf_value`, etc.) are strictly sanitized to standard JSON floats or `null`.
 - **Node.js & TypeScript 100% Safe**: Never triggers `SyntaxError: Unexpected token 'N' (NaN is not valid JSON)` when executing `JSON.parse()` in Node.js, Next.js API routes (`route.ts`), Python, Go, or browser clients.
 - **Graceful Insufficient Data Handling**: When historical price days are shorter than rolling indicator windows (e.g. calculating 6-month momentum on a 3-month timeframe), indicators automatically use `min_periods=1` and fallback to valid numbers or `null`.
+
+
+## Headline Arena committee forecast (synchronous analysis only)
+
+`POST /api/analysis` optionally accepts `forecastChallenge` (the complete Arena daily
+challenge object) and `marketContext` (fresh `/api/v1/eval/challenges/{id}/context` response).
+These inputs are supplied by `scripts/sync_headline_arena.py`; the backend does not submit to Arena.
+Legacy stock analysis requests remain unchanged. Async forecast requests are rejected.
+
+Requirements:
+- One ticker: ES uses `SPY`, GC uses `GLD`; other assets are outside this pilot.
+- `selectedAnalysts` must be `["technical_analyst", "sentiment_analyst"]`, with
+  `enableRoundTable=true`. Do not use the unsupported `analysts` parameter.
+- The challenge must include `id`, `asset`, `challenge_type`, `question`, `status`,
+  `deadline`, `resolve_at`, `open_price`, `open_price_confirmed`, `baseline_status`,
+  `contract_symbol`, `dead_zone_pct`, and `resolution_criteria`. Baseline must be confirmed.
+- Explicit `prediction_schema` is checked for the three bearish/neutral/bullish outcomes;
+  absent schema is accepted only for the documented legacy daily direction contract.
+- Context must be challenge-bound and prediction-ready, with matching contract/baseline,
+  an undelayed quote and an observation timestamp no older than 15 minutes. A refreshed
+  response timestamp alone does not establish quote freshness.
+
+The response adds `forecast`: `challenge_id`, full `probabilities`, bilingual `reasoning`,
+`prompt_hash`, `prompt_version`, `model_attribution`, `selectedAnalysts`, and `evidence`.
+Sentiment signals also expose `data_coverage.news_count` / `insider_count`; zero-news
+sentiment defaults are rejected for this pilot. The evidence contains normalized analyst
+confidence, actual `round_table[ticker]`, proxy
+limitations, context and challenge rules. Portfolio actions are references only. Primary
+and fallback synthesis failures return HTTP 503; no neutral/default forecast is returned.
+Actual synthesis model attribution reflects failover and does not describe every upstream
+analyst call. Model text is never trusted to self-report the provider used.
+
+CLI: run `--status`, then `--dry-run`, then `--submit` after human claim. Submission is
+committee-only and requires a live token confirming `agent_status=active` and
+`claim_pending=false`. Existing provisional agents must be claimed, not registered again.
+CLI configuration: `HEDGE_FUND_URL`, `HA_BASE_URL`, `HA_HOME`, `HA_AGENT_ID`,
+`HA_CLIENT_SECRET`; existing private credential files remain supported. Do not expose
+claim links, pairing codes or secrets. The SQLite journal defaults to
+`HA_HOME/forecast_runs.sqlite3` (`--journal` overrides); persist and share it per agent.
+
+Only `counts_for_score=true` on a successful submission is treated as scoring-eligible;
+false means paper-only and missing means unconfirmed. Pending or ambiguous attempts are
+not automatically retried. Confirmed-unsent requests and explicit 4xx rejections release
+reservations for a later run; 408 remains ambiguous and 409 remains blocked for remote
+prediction reconciliation. Evaluation reports failed reads and filters by the selected agent. `--evaluate` compares eligible resolved predictions with saved
+uniform, always-neutral and momentum baselines using raw three-class Brier. This differs
+from the platform's confidence-weighted directional leaderboard score. Predictive skill,
+account claim and production coverage require operational validation; none is implied by
+successful offline tests.

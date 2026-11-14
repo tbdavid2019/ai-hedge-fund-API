@@ -6,6 +6,21 @@
 
 ## 🚀 未發布
 
+### Headline Arena：委員會完整機率與可追溯提交（Issue #4）
+- 修正同步 CLI 的 `selectedAnalysts` 參數；先限定 ES→SPY、GC→GLD 與技術／情緒分析師，不再把個股財報 Agent 或未驗證資產自動納入。Persona 獨立提交暫緩。
+- 同步 `/api/analysis` 新增 `forecastChallenge`／`marketContext`，後端透過 `call_llm()` 依凍結合約、基準價、期限、中性門檻、即時合約證據與實際 `round_table[ticker]` 合成完整三分類機率，CLI 保持標準庫相依。
+- 移除買賣決策直接轉方向、空結果中性 70%、Persona 名稱失配與百分比誤截斷；缺證據、非支援 schema、基準未確認、延遲／過期報價、過期題目均跳過，不捏造預測。
+- 合成明確提供拋錯的 `default_factory`；`call_llm()` 新增可選的成功模型 metadata，追蹤真實備援模型，且主模型未回合法 JSON 時會嘗試備援。保留雙語理由、不再固定截斷 480 字。
+- CLI 提交完整 `probabilities`、實際合成模型、prompt hash 與穩定 idempotency key；分析後及發送前重查 deadline，回執依 `counts_for_score` 區分正式評分資格、paper-only 與未確認。
+- 永遠補拉 challenge-bound context；已認證的空題目列表不再退回全域公開列表。提交前重新確認人工認領，禁止 provisional／未知狀態與重複註冊自動改名；狀態輸出不顯示 claim／認證資料。
+- 新增 SQLite 證據／回執 journal 與跨程序唯一提交 reservation，逾時／崩潰後不自動重送；`--evaluate` 以同題已結算紀錄比較均勻、固定中性、簡單動能的原始 Brier，尚未宣稱存在預測增益。
+- 情緒 Agent 額外回傳 `data_coverage`（新聞／內部人筆數），預測合成拒絕零新聞的中性預設訊號。
+- 依 OpenCode `opencode/glm-5.3-flash-free` 與 OMP 雙重 code review 補強：認證檔以 SQLite 鎖及原子替換保存；401 換 token 後再次驗認領與報價期限；缺失的延遲狀態一律跳過；非 daily 題須明確 schema；評估依 agent 分開，動能直接依已驗證價格計算，處理上限不被前段跳過題目耗盡。
+- 審查後再補：有效中性新聞的 0 方向信心仍可作證據；合成服務失敗回 HTTP 503；CLI 與後端統一理由長度；評估以認證讀取並回報抓取失敗；環境變數中的 client secret 不落盤、換 token 僅更新 token／認領狀態欄位，避免覆蓋同期更新的私人認領資料。
+- 區分確認未送出／明確 4xx 拒絕與不明結果：前者釋放 reservation 允許下次重試，408、409 與逾時／5xx 仍保留，避免把既有遠端預測重送。
+- 新增離線回歸測試並同步 README、兩份 skill 與 OpenAPI；帳號認領、實際開放題目資料覆蓋與線上結算需另行驗證。
+
+
 ### 🌐 [LLMs.txt & Live Spec Policy] 上線標準 `llms.txt` / `llms-full.txt` 索引與強制即時拉取最新規格提醒
 - **新增標準 `llms.txt` 與 `llms-full.txt` 規範端點 ([`llms.txt`](file:///Users/david/Documents/git/tbdavid2019/ai-hedge-fund-API/llms.txt))**：
   - 遵循 [llmstxt.org](https://llmstxt.org) 全球標準，提供專供大型語言模型與 AI 爬蟲檢索之結構化 Markdown 索引地圖。

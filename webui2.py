@@ -26,6 +26,8 @@ from src.data.portfolio import add_quote_currency_rates, normalize_portfolio_inp
 from src.backtest_evaluation import run_backtest_grid
 from src.backtest_store import BacktestRunStore
 from src.utils.analysts import ANALYST_CONFIG
+from src.headline_contract import validate_challenge, validate_context
+from src.headline_forecast import ForecastUnavailable, synthesize_forecast
 
 # 加載 .env 環境變數
 load_dotenv()
@@ -589,6 +591,18 @@ def run_analysis():
         # 判斷是否為異步請求 (端點為 /api/analysis/async 或 payload 中包含 async: true)
         is_async = request.path.endswith('/async') or bool(data.get('async', False) or data.get('isAsync', False))
 
+        forecast_challenge = data.get("forecastChallenge")
+        market_context = data.get("marketContext")
+        if "forecastChallenge" in data:
+            policy = validate_challenge(forecast_challenge)
+            validate_context(market_context, forecast_challenge)
+            if is_async:
+                raise ValueError("forecastChallenge currently requires synchronous /api/analysis")
+            if ticker_list != [policy["ticker"]] or selected_analysts != policy["analysts"]:
+                raise ValueError("forecastChallenge requires the asset's pilot ticker and selectedAnalysts")
+            if not enable_round_table:
+                raise ValueError("forecastChallenge requires enableRoundTable=true")
+
         # 設定開始與結束時間
         end_date = data.get('endDate') or datetime.now().strftime('%Y-%m-%d')
         start_date = data.get('startDate') or (datetime.strptime(end_date, '%Y-%m-%d') - relativedelta(months=3)).strftime('%Y-%m-%d')
@@ -685,13 +699,22 @@ def run_analysis():
             point_in_time=bool(data.get("pointInTime", False)),
         )
 
+        if forecast_challenge is not None:
+            result["forecast"] = synthesize_forecast(
+                forecast_challenge, market_context, result, ticker_list[0],
+                selected_analysts, model_name, model_provider,
+            )
+
         broadcast_log("Analysis completed successfully", "success")
         
         # 發送 Discord 通知
-        send_discord_notification(ticker_list, result, end_date)
+        if forecast_challenge is None:
+            send_discord_notification(ticker_list, result, end_date)
         
         return jsonify(sanitize_json_output(result))
 
+    except ForecastUnavailable as e:
+        return jsonify({"error": str(e)}), 503
     except ValueError as e:
         broadcast_log(f"Invalid analysis request: {str(e)}", "error")
         return jsonify({"error": str(e)}), 400

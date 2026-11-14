@@ -258,6 +258,16 @@ curl -X POST "http://localhost:6000/api/analysis" \
 
 ## 📋 8. Mandatory AI Coding Agent Workflow Rules (AI Agent 必守開發規則)
 
+### Headline Arena committee probability pilot
+
+- `scripts/sync_headline_arena.py` remains standard-library-only and sends `selectedAnalysts`.
+- Pilot assets: ES→SPY and GC→GLD, with `technical_analyst` and `sentiment_analyst`. Proxies are research evidence, never frozen-contract settlement prices. Do not automatically re-enable financial-statement personas or other assets.
+- Synchronous `/api/analysis` accepts `forecastChallenge` and `marketContext`; final synthesis uses actual `round_table[ticker]` and the challenge's frozen rules. Async forecast requests are rejected.
+- Never turn buy/sell/hold or opinion confidence into event probabilities. Submit complete bearish/neutral/bullish probabilities; missing evidence, zero-news sentiment defaults, failed synthesis, unconfirmed baselines, stale quotes or unsupported schemas must not create forecasts.
+- `call_llm()` synthesis must provide an explicit failure-raising `default_factory`. Actual successful model attribution is captured through `result_metadata`, including fallback; do not guess the provider from a persona or registration profile.
+- CLI `--submit` requires fresh token confirmation of `agent_status=active` and `claim_pending=false`. Recover and claim existing agents before considering registration. Never print private claim or authentication material in status logs.
+- Persist/share the SQLite journal per agent. `counts_for_score=true` on HTTP 200/201 is scoring-eligible, not settled; false is paper-only. Pending/ambiguous attempts must not be automatically replayed. Use `--evaluate` for same-question raw Brier comparisons; do not equate it with the directional leaderboard score.
+
 ### Point-in-Time analysis and resumable grid runs
 
 - `POST /api/analysis` accepts optional `portfolio` and `pointInTime`; legacy requests keep `initialCash` behavior. Explicit portfolio cash overrides `initialCash`.

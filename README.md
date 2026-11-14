@@ -64,9 +64,9 @@ An institutional-grade, multi-agent financial quantitative research and investme
 6. 📈 **Quantitative Risk & Portfolio Management**:
    - Computes 95%/99% VaR, CVaR Expected Shortfall, volatility regime compression, and ATR trailing stops.
    - Automatically sizes portfolio allocations across cash and equity holdings.
-7. 🏟️ **Headline Arena Agent Forecasting Arena Integration (`scripts/sync_headline_arena.py`)**:
-   - Seamlessly synchronizes macro commodity & index forecasts with [Headline Arena](https://headlinearena.com) ([Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4)).
-   - Automatically maps macro futures contracts (Gold `GC`, S&P 500 `ES`, Treasuries `ZN`, Crude `CL`, Bitcoin `BTC`) to liquid underlying ETFs (`GLD`, `SPY`, `TLT`, `USO`, `BTC-USD`), benchmarks committee vs persona convictions, and tracks public verifiable Brier accuracy scores.
+7. 🏟️ **Headline Arena Committee Forecast Pilot (`scripts/sync_headline_arena.py`)**:
+   - ES/GC committee pilot for [Headline Arena](https://headlinearena.com) ([Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4)); backend synthesis conditions full bearish/neutral/bullish probabilities on each frozen challenge and market context.
+   - CLI uses the standard library; technical and sentiment analysts provide proxy research, not settlement prices. Confirmed opening baselines, fresh quotes for the frozen contract, completed human claim, and local duplicate protection are required for submission. Persona competition and other assets are deferred; no claim of proven predictive skill.
 8. ⚡ **Independent Algorithmic Decision Model Agent (`decision_model`)**:
    - Packaged as an independent quantitative analyst agent powered by TypeSafe JEV / Clef-Flash SystemOne.
    - Generates calibrated $T+1 \sim T+3$ directional probability distributions (`bullish`, `neutral`, `bearish`) and incorporates PEAD earnings drift.
@@ -213,9 +213,9 @@ AI_HEDGE_FUND_IMAGE=ghcr.io/tbdavid2019/ai-hedge-fund-api:latest docker compose 
    - 具備 SQLite 支援之批次同步日期網格回測（`/api/backtest/grid`），支援同配置中斷續跑。
 6. 📊 **機構級量化風險管理（CVaR & 波動率制度）**：
    - 動態計算 95%/99% VaR、CVaR 預期虧損率、Amihud 流動性指標、歷史波動率壓縮制度與 ATR 動態追蹤停損。
-7. 🏟️ **Headline Arena 公開宏觀預測競技場無縫對接 (`scripts/sync_headline_arena.py`)**：
-   - 完美相容 [Headline Arena](https://headlinearena.com) AI Agent 預測協議（[Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4)）。
-   - 自動將宏觀期貨題目（黃金 GC、標普 ES、美債 ZN、原油 CL、比特幣 BTC）映射至對應資產，支持委員會共識或卓肯米勒單一大師出戰，公開累積 Brier 評分與預測命中記分卡。
+7. 🏟️ **Headline Arena 委員會宏觀預測試驗 (`scripts/sync_headline_arena.py`)**：
+   - [Headline Arena](https://headlinearena.com) 的 ES／GC 委員會試驗（[Issue #4](https://github.com/tbdavid2019/ai-hedge-fund-API/issues/4)）：後端依每題凍結的合約、期限、基準價與結算門檻合成完整三分類機率。
+   - CLI 維持標準庫相依；僅選技術面與情緒面，SPY／GLD 作研究代理，不作期貨結算價。基準價確認、合約即時報價、人工認領與提交去重均通過後才送出；個別 Persona 與其他資產暫緩，尚未宣稱具備預測增益。
 8. ⚡ **獨立量化演算法決策模型 (`decision_model`)**：
    - 將 TypeSafe JEV / Clef-Flash SystemOne 快速推理與短線方向機率預測封裝為獨立分析師 Agent。
    - 直接輸出 $T+1 \sim T+3$ 方向多分類機率向量（看漲、平盤、看跌）與 PEAD 盈餘驚喜漂移信號。
@@ -309,3 +309,57 @@ python webui2.py
 ## 📄 License
 
 本專案採用 [MIT License](LICENSE) 開源授權協議。
+
+
+### Headline Arena committee pilot / 委員會預測試驗
+
+Use a backend version that supports `forecastChallenge` on synchronous `POST /api/analysis`.
+The CLI sends `selectedAnalysts`, not `analysts`. It keeps LLM dependencies and keys on the backend.
+
+```bash
+# Inspect existing agent authentication/claim status without displaying private claim material.
+python3 scripts/sync_headline_arena.py --status
+# Fetch challenge-bound context and run backend analysis without submitting to Arena.
+python3 scripts/sync_headline_arena.py --dry-run --asset ES,GC --limit 2
+# Submit only after completing the human claim; does not create a new agent.
+python3 scripts/sync_headline_arena.py --submit --asset ES --limit 1
+# Compare locally recorded eligible, resolved predictions on the same questions.
+python3 scripts/sync_headline_arena.py --evaluate
+```
+
+Configuration: `HEDGE_FUND_URL` selects the updated analysis server; `HA_BASE_URL` selects Arena;
+`HA_AGENT_ID` and `HA_CLIENT_SECRET` provide existing agent credentials from the environment.
+The existing private credential store is also supported. `HA_HOME` defaults to `~/.headlinearena`;
+`--journal` overrides its `forecast_runs.sqlite3` journal. Keep the journal persistent across runs
+and use one shared journal for each agent; separate machines with separate journals cannot
+coordinate local reservations. Do not commit credentials, claim links or pairing codes.
+`--status` refreshes authentication; unknown or provisional claim status blocks `--submit`.
+An unauthenticated result does not prove whether a remote account exists: recover the existing
+credentials/claim before considering `--register`. No scheduling is installed by this change.
+
+`--dry-run` invokes the backend and can incur inference cost. Only ES→SPY and GC→GLD are
+currently allowed, with `technical_analyst` and `sentiment_analyst`; other assets and independent
+Persona submissions are intentionally disabled. Empty/failed evidence, unsupported schemas,
+unconfirmed baselines, a contract mismatch, or quote age over 15 minutes cause a skip.
+These proxies have different trading hours and basis risk; the live frozen-contract context
+is required even when the proxy research succeeds. This pilot still needs validation over
+actual open rounds; support in code is not evidence of stable data coverage or forecast skill.
+
+The journal stores challenge rules, context, normalized analyst evidence, actual round-table
+output, full probabilities and bilingual rationale, prompt hash/version, actual synthesis model,
+and a restricted receipt. A timeout or crash after reservation blocks automatic resubmission;
+inspect the remote prediction and local attempt before manually reconciling. Confirmed unsent
+requests and explicit 4xx rejections release the local reservation for a later run, except
+408 (ambiguous timeout) and 409 (possible existing remote prediction), which stay blocked.
+A 200/201 response
+is eligible only when `counts_for_score=true`; false is recorded as `paper_only`, and an absent
+flag as `unconfirmed`. These flags describe eligibility, not whether settlement has occurred.
+
+`--evaluate` excludes dry runs, paper-only and unconfirmed submissions. It reports raw
+three-class Brier (sum of squared probability errors; lower is better) against uniform 1/3,
+always-neutral, and a one-hot momentum baseline using observed change from the opening price
+and the question's own neutral threshold. Every comparator uses the same recorded question.
+The platform's directional confidence-weighted leaderboard score is a separate metric.
+No benchmark advantage can be claimed before collecting and evaluating settled samples.
+See [Arena methodology](https://headlinearena.com/methodology) and
+[onboarding guide](https://headlinearena.com/api/v1/agent/onboarding/guide.txt).
